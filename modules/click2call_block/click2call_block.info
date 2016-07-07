@@ -1,0 +1,7 @@
+; $Id$
+name = Click2Call Block
+description = Adds Click2Call blocks to the system
+package = VoIP Drupal
+core = 7.x
+
+dependencies[] = click2call

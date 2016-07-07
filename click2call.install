@@ -1,0 +1,10 @@
+<?php
+// $Id$
+/**
+ * Implementation of hook_install().
+ */
+function click2call_install() {
+}
+
+function click2call_uninstall() {
+}

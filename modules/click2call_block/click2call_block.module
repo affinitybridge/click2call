@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * Implements hook_block_configure().
+ */
+function click2call_block_block_configure($delta = '') {
+  // This example comes from node.module.
+  $form = array();
+
+  if (is_numeric($delta)) {
+    $scripts[0] = '-none-';
+    $scripts = array_merge($scripts, VoipScript::getScriptNames());
+
+    $form['click2call'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Click2Call settings'),
+      '#collapsible'  => TRUE,
+      '#collapsed'    => FALSE,
+    );
+    $form['click2call']['click2call_block_script'] = array(
+      '#type' => 'select',
+      '#title' => t('Click2Call script'),
+      '#default_value' => variable_get('click2call_block_script_' . $delta, 0),
+      '#options' => $scripts,
+      '#required' => TRUE,
+    );
+    $form['click2call']['click2call_block_script_description'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Click2Call field description'),
+      '#default_value' => variable_get('click2call_block_script_desc_' . $delta, t('Click here to call')),
+      '#description' => t('Text inviting users to click on the field. Examples might include: "click here to connect with our sales department", "click here to get the weather report for your location", etc.'),
+    );
+
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function click2call_block_block_info() {
+  $blocks = array();
+  for ($i = 1; $i <= variable_get('click2call_block_number', 2); $i++) {
+    $blocks[$i] = array(
+      'info' => variable_get(
+        'click2call_block_script_desc_' . $i,
+        'Click2Call ' . $i . ' (Click2Call)'
+      ),
+    );
+  }
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function click2call_block_block_save($delta = '', $edit = array()) {
+   if (is_numeric($delta)) {
+     variable_set('click2call_block_script_' . $delta, $edit['click2call_block_script']);
+     variable_set('click2call_block_script_desc_' . $delta, $edit['click2call_block_script_description']);
+   }
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function click2call_block_block_view($delta = '') {
+  $block = array();
+
+  if (is_numeric($delta)) {
+    $block = array(
+      'subject' => variable_get('click2call_block_script_desc_' . $delta, t('Click here to call')),
+    );
+    $script_name = variable_get('click2call_block_script_' . $delta, 0);
+    if ($script_name) {
+      $block['content'] = click2call_content('block', $delta, $script_name);
+    }
+    else {
+      // No script name, display message
+      $block['content'] = t(
+        'The Click2Call block is not configured. You must select a VoIP Drupal script from !link',
+        array(
+          '!link' => l('block settings', 'admin/build/block/configure/click2call/' . $delta)
+        )
+      );
+    }
+  }
+
+  return $block;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function click2call_block_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id=='click2call_admin_settings_form') {
+    $form['click2call_block'] = array(
+      '#type'         => 'fieldset',
+      '#title'        => t('Block settings'),
+      '#collapsible'  => TRUE,
+      '#collapsed'    => FALSE,
+      '#weight' => 10,
+    );
+    $form['click2call_block']['click2call_block_number'] = array(
+      '#title' => t('Number of blocks'),
+      '#type' => 'textfield',
+      '#description' => t('The desired number of Click2Call blocks to be made available in the system. Enter a number between 0 and 99. If you set this to 0, you will get no Click2Call blocks.'),
+      '#default_value' => variable_get('click2call_block_number', '2'),
+      '#size' => 2,
+
+    );
+  }
+}
+
+/*
+ *
+ */
+function click2call_get_script_options() {
+  $script_options[0] = '-none-';
+  $script_options = array_merge($script_options, VoipScript::getScriptNames());
+  return $script_options;
+}

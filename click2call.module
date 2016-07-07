@@ -1,0 +1,326 @@
+<?php
+
+//-------------------------------------------------------
+// CORE HOOKS
+//-------------------------------------------------------
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function click2call_form_click2call_call_form_alter(&$form, &$form_state, $form_id) {
+  // Add form build_id
+  if (isset($form['#attached']['js'])) {
+    foreach ($form['#attached']['js'] as $delta => $js_array) {
+      if (isset($js_array['type']) && 'setting' == $js_array['type']) {
+        if (isset($js_array['data']['click2call'])) {
+          $form['#attached']['js'][$delta]['data']['click2call']['formBuildId'] = $form['#build_id'];
+          return;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function click2call_menu() {
+  $items['admin/settings/click2call'] = array(
+    'title' => 'Click2Call',
+    'description' => 'Click2Call settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('click2call_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/click2call.admin.inc',
+  );
+
+  $items['click2call/call/%'] = array(
+    'title' => 'Call',
+    'description' => '',
+    'page callback' => 'click2call_call',
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'delivery callback' => 'drupal_json_output',
+    'file' => 'includes/click2call.callbacks.inc',
+  );
+
+  $items['click2call/status/%'] = array(
+    'title' => 'Get Call Status',
+    'description' => '',
+    'page callback' => 'click2call_status',
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'delivery callback' => 'drupal_json_output',
+    'file' => 'includes/click2call.callbacks.inc',
+  );
+
+  $items['click2call/hangup/%'] = array(
+    'title' => 'Hangup',
+    'description' => '',
+    'page callback' => 'click2call_hangup',
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+    'delivery callback' => 'drupal_json_output',
+    'file' => 'includes/click2call.callbacks.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function click2call_theme($existing, $type, $theme, $path) {
+  return array(
+    'click2call_phone_numbers' => array(
+      'variables' => array('field_name' => NULL, 'delta' => 0, 'content_type' => ''),
+      // TODO: Include file property and move function out into .theme.inc
+      'file' => '/includes/click2call.theme.inc',
+    ),
+  );
+}
+
+/*
+ * Impolements hook_TYPE_alter().
+ */
+ /*
+function click2call_click2call_params_alter(&$params) {
+  if (isset($params['script_name'])) {
+    switch ($params['script_name']) {
+      case 'click2call_2way_engagement_script':
+        // TODO: Alter params based on field_name and delta?
+//        dsm('toodles');
+//        $params['intro'] = 'This is a new update to the intro';
+        break;
+    }
+
+  }
+}
+*/
+
+//-------------------------------------------------------
+// CONTRIB HOOKS
+//-------------------------------------------------------
+
+/**
+ * Implements hook_voipscript_get_script_names().
+ */
+function click2call_voipscript_get_script_names() {
+  $script_names = array(
+    'click2call_2way_engagement_script',
+    // TODO: Add SMS return script
+  );
+  return $script_names;
+}
+
+/**
+ * Implements hook_voipscript_load_script().
+ */
+function click2call_voipscript_load_script($script_name, $params = NULL) {
+  $script = NULL;
+  switch ($script_name) {
+
+    case 'click2call_2way_engagement_script':
+      $script = new VoipScript('click2call_2way_engagement_script');
+      $script->addSay($params['intro']);
+      $script->addBeep();
+      $script->addSay(t("Connecting you now."));
+      $script->addDial($params['to_number'], 30, false, 3600, '+1' . $params['from_number']);
+      break;
+
+    // Add SMS Return script
+    default:
+      break;
+  }
+  return $script;
+}
+
+//-------------------------------------------------------
+// THEME FUNCTION - REFACTOR AND MOVE
+//-------------------------------------------------------
+
+function click2call_get_form_build_info($c2c_form_build_id) {
+  $result = db_query(
+    'SELECT * FROM {cache_form} cf WHERE cf.cid = :cid',
+    array(':cid' => 'form_state_' . $c2c_form_build_id)
+  );
+  if ($result) {
+    while ($record = $result->fetchAssoc()) {
+      if (isset($record['data'])) {
+        if ($form_array = unserialize($record['data'])) {
+          return $form_array['build_info'];
+        }
+      }
+    }
+  }
+}
+
+/*
+ * This helper function sticks the click2call_call_form build id in before rendering
+ */
+ /*
+function click2call_call_form_render($module, $delta, $script_name) {
+  $c2c_key = $module . '-' . $delta;
+
+  $call_form = drupal_get_form('click2call_call_form', $module, $delta, $script_name);
+
+  // Add form build_id
+  if (isset($call_form['#build_id'])) {
+
+    if (isset($call_form['#attached']['js'])) {
+      foreach ($call_form['#attached']['js'] as $i => $js_array) {
+        if (isset($js_array['type']) && 'setting' == $js_array['type']) {
+          if (isset($js_array['data']['click2call'])) {
+//            $call_form['#attached']['js'][$i]['data']['click2call']['formBuildId'] = $call_form['#build_id'];
+            break;
+          }
+        }
+      }
+    }
+  }
+  else {
+    // TODO: Set a watchdog, no #build_id set on form
+  }
+  return drupal_render($call_form);
+}
+*/
+
+function click2call_call_form($form, &$form_state, $module, $delta, $params) {
+
+  $form_state['cache'] = TRUE;
+
+  $c2c_key = $module . '-' . $delta;
+  $click2call_settings = array(
+    'module' => $module,
+    'delta' => $delta,
+    'c2cKey' => $c2c_key,
+  );
+  $form['#attached']['js'] = array(
+    array(
+      'data' => array(
+        'click2call' => $click2call_settings,
+      ),
+      'type' => 'setting',
+    ),
+    drupal_get_path('module', 'click2call') . '/js/click2call.js',
+  );
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'click2call') . '/css/click2call.css',
+  );
+
+  // Add vars so they are easy to get later from AJAX calls
+  $form_state['build_info']['args']['module'] = $module;
+  $form_state['build_info']['args']['delta'] = $delta;
+  $form_state['build_info']['args']['c2c_key'] = $c2c_key;
+  $form_state['build_info']['args']['params'] = $params;
+  // TODO: Get rid of these last 2, shouldn't need them
+  $form_state['build_info']['args']['call_label '] = 'click2call_webform_link';
+  $form_state['build_info']['args']['to_number'] = 'click2call_phoneto';
+
+  $call_label = 'click2call_webform_link';
+//   $output = '<a class="click2call-link">' . t($call_label) . '</a>';
+  $form['c2c_header'] = array(
+    '#type' => 'markup',
+    '#markup' => $call_label,
+  );
+
+  // Hidden div to store the phone list
+//  $output .= '<div id="click2call-' . $c2c_key . '-hidden" class="click2call-hidden"></div>';
+  $form['c2c_hidden'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div id="click2call-' . $c2c_key . '-hidden" class="click2call-hidden"></div>',
+    '#prefix' => '<div id="click2call-group-' . $c2c_key . '" class="click2call-hidden">',
+  );
+
+  // Hidden div to store the call status in case of error
+//  $output .= '<div id="click2call-' . $c2c_key . '-status"></div>';
+  $form['c2c_status'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div id="click2call-' . $c2c_key . '-status"></div>',
+  );
+
+  // Hidden input to store the call cid.
+//  $output .= '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>';
+  $form['c2c_callcid'] = array(
+    '#type' => 'markup',
+    '#markup' => '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>',
+  );
+
+  $to_number = 'click2call_phoneto';
+  if ($to_number) {
+    // Hidden input to store the to number.
+    $to_number = str_replace('+', '', $to_number);
+//    $output .= '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>';
+    $form['c2c_tonumber'] = array(
+      '#type' => 'markup',
+      '#markup' => '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>',
+    );
+  }
+
+  // Theme function for phone number entry
+//  $output .= theme('click2call_phone_numbers', array('field_name' => $field_name, 'delta' => $delta));
+  $form['c2c_phone_numbers'] = array(
+    '#type' => 'markup',
+    '#markup' => theme('click2call_phone_numbers', array('field_name' => $module, 'delta' => $delta)),
+  );
+
+  //Call/Remove button
+  //  $output .= '<input class="click2call-button" id="click2call-button-' . $c2c_key . '" type="button" value="Call Me" />';
+  $form['c2c_call_button'] = array(
+    '#type' => 'markup',
+    '#markup' => '<input class="click2call-button" id="click2call-button-' . $c2c_key . '" type="button" value="Call Me" />',
+  );
+
+  //Hangup button
+  //$output .= '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $c2c_key . '" type="button" value="' . t('Hangup') . '" />';
+  $form['c2c_hangup_button'] = array(
+    '#type' => 'markup',
+    '#markup' => '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $c2c_key . '" type="button" value="' . t('Hangup') . '" />',
+    '#suffix' => '</div>',
+  );
+
+  return $form;
+}
+
+/*
+ * This does it all
+ */
+ /*
+ // TODO: This should likely be a theme function
+function click2call_content($field_name, $delta, $script_name, $call_label = 'Click here to call', $to_number = '') {
+  $c2c_key = $field_name . '-' . $delta;
+  $click2call_settings = array(
+    'fieldName' => $field_name,
+    'delta' => $delta,
+    'c2cKey' => $c2c_key,
+  );
+  drupal_add_js(array('click2call' => $click2call_settings), 'setting');
+  drupal_add_js(drupal_get_path('module', 'click2call') . '/js/click2call.js');
+  drupal_add_css(drupal_get_path('module', 'click2call') . '/css/click2call.css');
+
+  $output = '<a class="click2call-link">' . t($call_label) . '</a>';
+  $output .= '<div id="click2call-group-' . $c2c_key . '" class="click2call-hidden">';
+  // Hidden div to store the phone list
+  $output .= '<div id="click2call-' . $c2c_key . '-hidden" class="click2call-hidden"></div>';
+  // Hidden div to store the call status in case of error
+  $output .= '<div id="click2call-' . $c2c_key . '-status"></div>';
+  // Hidden input to store the call cid.
+  $output .= '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>';
+  if ($to_number) {
+    // Hidden input to store the to number.
+    $to_number = str_replace('+', '', $to_number);
+    $output .= '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>';
+  }
+  // Theme function for phone number entry
+  $output .= theme('click2call_phone_numbers', array('field_name' => $field_name, 'delta' => $delta));
+  //Call/Remove button
+  $output .= '<input class="click2call-button" id="click2call-button-' . $c2c_key . '" type="button" value="Call Me" />';
+  //Hangup button
+  $output .= '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $c2c_key . '" type="button" value="' . t('Hangup') . '" />';
+  $output .= '</div>';
+  return $output;
+}
+*/

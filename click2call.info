@@ -1,0 +1,8 @@
+; $Id$
+name = Click2Call
+description = Provides a common API for Click2Call modules
+package = VoIP Drupal
+core = 7.x
+
+dependencies[] = voip
+dependencies[] = voipcall

@@ -1,0 +1,7 @@
+; $Id$
+name = Click2Call Webform
+description = Adds a Click2Call type webform component
+package = VoIP Drupal
+core = 7.x
+
+dependencies[] = click2call
