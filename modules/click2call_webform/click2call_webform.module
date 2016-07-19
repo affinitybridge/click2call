@@ -5,24 +5,6 @@
 //-------------------------------------------------------
 
 /**
- * Implements hook_form_alter().
- */
-function click2call_webform_form_alter(&$form, &$form_state, $form_id) {
-  // Check to see if form is a webform
-  if (!strncmp($form_id, 'webform_', strlen('webform_'))) {
-    // If webform key exists in $form_state check to see if webform has represent components and build array of them.
-    if (isset($form_state['webform'])) {
-      $page_num = $form_state['webform']['page_num'];
-      foreach ($form_state['webform']['component_tree']['children'] as $key => $component) {
-        if ('click2call' == $component['type'] && $page_num == $component['page_num']) {
-          $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
-        }
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  */
 function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state, $form_id) {
@@ -106,6 +88,20 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
           }
         }
         break;
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function click2call_webform_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form_state['webform'])) {
+    $page_num = $form_state['webform']['page_num'];
+    foreach ($form_state['webform']['component_tree']['children'] as $key => $component) {
+      if ('click2call' == $component['type'] && $page_num == $component['page_num']) {
+        $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
+      }
     }
   }
 }
@@ -196,7 +192,6 @@ function click2call_webform_click2call_params_alter(&$params) {
               $component_info = $node->webform['components'];
 
               // Set From number
-
               if (isset($params['extra']['phone_1_component'])) {
                 $submitted_component = webform_util_get_submission_by_cid(
                   $node,
@@ -226,66 +221,6 @@ function click2call_webform_click2call_params_alter(&$params) {
                   );
                 }
               }
-
-              /*
-              if (isset($params['extra']['phone_1_component'])) {
-                $submitted_component = webform_util_get_submission_by_cid(
-                  $node,
-                  $params['extra']['phone_1_component'],
-                  $submission_array
-                );
-                if (isset($submitted_component)) {
-                  switch ($submitted_component['#webform_component']['type']) {
-                    case 'phone':
-                      $from_number = $submitted_component['#value'];
-                      break;
-                    case 'represent':
-                      $representative = webform_represent_get_representatives(
-                        $submitted_component['#webform_component']['extra']['options_source'],
-                        $submission->data[$params['extra']['phone_1_component']]
-                      );
-                      if (isset($representative)) {
-                        if (isset($representative->offices[0]->tel)) {
-                          $from_number = $representative->offices[0]->tel;
-                        }
-                      }
-                      break;
-                  }
-                  $params['click2call_number'] = $from_number;
-                  $params['from_number'] = $from_number;
-                }
-              }
-              */
-
-              // Set To Number
-              /*
-              if (isset($params['extra']['phone_2_component'])) {
-                $submitted_component = webform_util_get_submission_by_cid(
-                  $node,
-                  $params['extra']['phone_2_component'],
-                  $submission_array
-                );
-                if (isset($submitted_component)) {
-                  switch ($submitted_component['#webform_component']['type']) {
-                    case 'phone':
-                      $to_number = $submitted_component['#value'];
-                      break;
-                    case 'represent':
-                      $representative = webform_represent_get_representatives(
-                        $submitted_component['#webform_component']['extra']['options_source'],
-                        $submission->data[$params['extra']['phone_2_component']]
-                      );
-                      if (isset($representative)) {
-                        if (isset($representative->offices[0]->tel)) {
-                          $to_number = $representative->offices[0]->tel;
-                        }
-                      }
-                      break;
-                  }
-                  $params['to_number'] = $to_number;
-                }
-              }
-              */
 
               // Set intro text
               if (isset($params['extra']['text_component'])) {
@@ -362,60 +297,7 @@ function click2call_webform_get_number($component, $value) {
       }
       break;
   }
-
 }
-
-/*
-    switch ($submitted_component['#webform_component']['type']) {
-      case 'phone':
-        $from_number = $submitted_component['#value'];
-        break;
-      case 'represent':
-        $representative = webform_represent_get_representatives(
-          $submitted_component['#webform_component']['extra']['options_source'],
-          $submission->data[$params['extra']['phone_1_component']]
-        );
-        if (isset($representative)) {
-          if (isset($representative->offices[0]->tel)) {
-            $from_number = $representative->offices[0]->tel;
-          }
-        }
-        break;
-    }
-    $params['click2call_number'] = $from_number;
-    $params['from_number'] = $from_number;
-  }
-}
-
-// Set To Number
-if (isset($params['extra']['phone_2_component'])) {
-  $submitted_component = webform_util_get_submission_by_cid(
-    $node,
-    $params['extra']['phone_2_component'],
-    $submission_array
-  );
-  if (isset($submitted_component)) {
-    switch ($submitted_component['#webform_component']['type']) {
-      case 'phone':
-        $to_number = $submitted_component['#value'];
-        break;
-      case 'represent':
-        $representative = webform_represent_get_representatives(
-          $submitted_component['#webform_component']['extra']['options_source'],
-          $submission->data[$params['extra']['phone_2_component']]
-        );
-        $to_number = webform_represent_get_phone($representative, type);
-        if (isset($representative)) {
-          if (isset($representative->offices[0]->tel)) {
-            $to_number = $representative->offices[0]->tel;
-          }
-        }
-        break;
-    }
-    $params['to_number'] = $to_number;
-  }
-}
-*/
 
 /*
  *
