@@ -83,24 +83,6 @@ function click2call_theme($existing, $type, $theme, $path) {
   );
 }
 
-/*
- * Impolements hook_TYPE_alter().
- */
- /*
-function click2call_click2call_params_alter(&$params) {
-  if (isset($params['script_name'])) {
-    switch ($params['script_name']) {
-      case 'click2call_2way_engagement_script':
-        // TODO: Alter params based on field_name and delta?
-//        dsm('toodles');
-//        $params['intro'] = 'This is a new update to the intro';
-        break;
-    }
-
-  }
-}
-*/
-
 //-------------------------------------------------------
 // CONTRIB HOOKS
 //-------------------------------------------------------
