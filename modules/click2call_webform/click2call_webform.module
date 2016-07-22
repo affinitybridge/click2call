@@ -14,6 +14,16 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
         // TODO: Add Phone number and maybe text
         $args = $form_state['build_info']['args'];
         list($nid, $webform_cid) = explode('-', $args['delta']);
+
+        if (isset($args['params']['script_method'])) {
+          switch ($args['params']['script_method']) {
+            case 'post_submit':
+              return;
+              continue;
+              break;
+          }
+        }
+
         if ($extra = $args['params']['extra']) {
           if ($submission_data = $args['params']['submission']->data) {
 
@@ -100,7 +110,11 @@ function click2call_webform_form_webform_client_form_alter(&$form, &$form_state,
     $page_num = $form_state['webform']['page_num'];
     foreach ($form_state['webform']['component_tree']['children'] as $key => $component) {
       if ('click2call' == $component['type'] && $page_num == $component['page_num']) {
-        $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
+        switch ($component['extra']['script_method']) {
+          case 'automatic':
+            $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
+            break;
+        }
       }
     }
   }
@@ -160,6 +174,104 @@ function click2call_tokens_alter(array &$replacements, array $context) {
 /*
  *
  */
+function click2call_webform_webform_submission_presave($node, &$submission) {
+  // TODO: This is where we fire stuff on submit.
+  if (!$submission->is_draft && isset($submission->original)) {
+    if ($submission->original->is_draft) {
+      foreach ($node->webform['components'] as $component) {
+        switch ($component['type']) {
+          case 'click2call':
+            switch ($component['extra']['script_method']) {
+              case 'post_submit':
+                // TODO: Check params are set, or just run?
+                // TODO: Get components and send message
+                $module = 'click2call_webform';
+                $delta = $component['nid'] . '-' . $component['cid'];
+                $c2c_key = $module . '-' . $delta;
+
+    //            $name = variable_get('click2call_block_script_desc_' . $delta, t('Click here to call'));
+                $caller_name = t('Click2Call Block ' . $delta);
+                $caller_uid = 1;
+                global $user;
+                $params = /*$component['extra'] +*/ array(
+                  'module' => $module,
+                  'delta' => $delta,
+                  'uid' => $user->uid,
+    //              'name' => $name,
+            //      'number' => $number,
+                  'dest_name' => $user->name,
+                  'caller_uid' => $caller_uid,
+            //      'script_name' => $script_name,
+                  'click2call_key' => $c2c_key,
+              //    'click2call_phoneto' => $phone_to,
+                  'caller_name' => $caller_name,
+            //      'click2call_call_form_params' => $form_build_info['args']['params'],
+                  'script_name' => $component['extra']['script_name'],
+                  'script_method' => $component['extra']['script_method'],
+                );
+
+                // TODO: Set params
+
+                // Set From number
+                if (isset($component['extra']['phone_1_component']) && isset($component['extra']['phone_1_component'])) {
+                  $params['number_1'] = $submission->data[$component['extra']['phone_1_component']][0];
+                  $params['number'] = $params['number_1'];
+                }
+
+                // Set text 1
+                if (isset($component['extra']['text_1_component']) && isset($component['extra']['text_1_component'])) {
+                  $params['text_1'] = $node->webform['components'][$component['extra']['text_1_component']]['value'];
+                }
+
+                // Allow any modules to alter the params passed in, even script name
+                // TODO: Click2Call Webform will alter these params to put first name in
+                drupal_alter('click2call_params', $params);
+
+                $script = VoipScript::loadScript($params['script_name'], $params);
+                $call = new VoipCall(array());
+                $call->setDestNumber($params['number']);
+                $call->setDestName('Dave');
+    //            $call->setCallerName($params['caller_name']);
+//                $call->setScript($script);
+  //              $call->save();
+                // Dial the call.
+//                voip_dial($call);
+                // TODO: Set this all up, replace tokens and strip tags
+                $params['text_1'] = token_replace(
+                  $params['text_1'],
+                  array(
+                    'node' => $node,
+                    'submission' => $submission,
+                  )
+                );
+                voip_text($params['text_1'], $call);
+
+                // Log call with watchdog
+                $type = 'click2call';
+                $message = t(
+                  'New Click2Call message recorded by !username to phone !number. See voip call cid !call_cid.',
+                  array(
+                    '!username' => $user->name,
+                    '!number' => $params['number'],
+                    '!call_cid' => $call->getCid(),
+                  )
+                );
+                watchdog($type, $message);
+                if ($call_cid = $call->getCid()) {
+//                  dsm('well yippie key eh, I got a call cid for the post submit thingy! - > '.$call_cid);
+                }
+                break;
+            }
+            break;
+        }
+      }
+    }
+  }
+}
+
+/*
+ *
+ */
 function click2call_webform_token_info_alter(&$data) {
   $click2call_description = '<div>' . t('Click2Call component tokens from call log. Replace the "?" with the "field key", and replace ?? a call log param.') . '</div>' .
     '<ul>' .
@@ -184,6 +296,8 @@ function click2call_webform_click2call_params_alter(&$params) {
       if (isset($params['script_name'])) {
         switch ($params['script_name']) {
           case 'click2call_2way_engagement_script':
+          case 'click2call_2way_engagement_sms_script':
+          case 'click2call_sms_script':
             if (isset($params['submission'])) {
               $submission = $params['submission'];
               $node = node_load($submission->nid);
@@ -203,7 +317,8 @@ function click2call_webform_click2call_params_alter(&$params) {
                     $submitted_component,
                     $submission->data[$params['extra']['phone_1_component']]
                   );
-                  $params['from_number'] = $params['click2call_number'];
+                  $params['number_1'] = $params['click2call_number'];
+                  $params['number'] = $params['click2call_number'];
                 }
               }
 
@@ -215,22 +330,34 @@ function click2call_webform_click2call_params_alter(&$params) {
                   $submission_array
                 );
                 if (isset($submitted_component)) {
-                  $params['to_number'] = click2call_webform_get_number(
+                  $params['number_2'] = click2call_webform_get_number(
                     $submitted_component,
                     $submission->data[$params['extra']['phone_2_component']]
                   );
                 }
               }
 
-              // Set intro text
-              if (isset($params['extra']['text_component'])) {
+              // Set text 1
+              if (isset($params['extra']['text_1_component'])) {
                 $submitted_component = webform_util_get_submission_by_cid(
                   $node,
-                  $params['extra']['text_component'],
+                  $params['extra']['text_1_component'],
                   $submission_array
                 );
                 if (isset($submitted_component)) {
-                  $params['intro'] = $submitted_component['#value'];
+                  $params['text_1'] = $submitted_component['#value'];
+                }
+              }
+
+              // Set text 2
+              if (isset($params['extra']['text_2_component'])) {
+                $submitted_component = webform_util_get_submission_by_cid(
+                  $node,
+                  $params['extra']['text_2_component'],
+                  $submission_array
+                );
+                if (isset($submitted_component)) {
+                  $params['text_2'] = $submitted_component['#value'];
                 }
               }
             }
@@ -283,7 +410,7 @@ function click2call_webform_webform_component_info() {
 function click2call_webform_get_number($component, $value) {
   switch ($component['#webform_component']['type']) {
     case 'phone':
-      return $submitted_component['#value'];
+      return $component['#value'];
       break;
     case 'represent':
       $representative = webform_represent_get_representatives(

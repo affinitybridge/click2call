@@ -27,8 +27,10 @@ function _webform_defaults_click2call() {
       'private' => FALSE,
       'phone_1_component' => '',
       'phone_2_component' => '',
+      'script_method' => '',
       'script_name' => '',
-      'text_component' => '',
+      'text_1_component' => '',
+      'text_2_component' => '',
       // Quack like a select component.
       'aslist' => 0,
       'multiple' => 1,
@@ -97,6 +99,20 @@ function _webform_edit_click2call($component) {
     '#parents' => array('extra', 'script_name'),
   );
 
+  $form['extra']['click2call_config']['script_method'] = array(
+    '#title'         => t('Script Method'),
+    '#type'          => 'radios',
+    '#options'       => array(
+      'automatic' => t('Run the script automatically when the webform page holding this component is loaded.'),
+      'button' => t('Allow the user to run the script by clicking a button on the webform'),
+      'post_submit' => t('Do not render any widgets for this component and run the script on webform submit'),
+    ),
+    '#default_value' => $component['extra']['script_method'],
+    '#description'   => t('Please select how the script will be run.'),
+    '#required'      => TRUE,
+    '#parents' => array('extra', 'script_method'),
+  );
+
   $form['extra']['click2call_config']['phone_1_component'] = array(
     '#title'         => t('Phone Number 1 Component'),
     '#type'          => 'select',
@@ -117,14 +133,24 @@ function _webform_edit_click2call($component) {
     '#parents' => array('extra', 'phone_2_component'),
   );
 
-  $form['extra']['click2call_config']['text_component'] = array(
-    '#title'         => t('Text Component'),
+  $form['extra']['click2call_config']['text_1_component'] = array(
+    '#title'         => t('Text 1 Component'),
     '#type'          => 'select',
     '#options'       => $text_options,
-    '#default_value' => $component['extra']['text_component'],
-    '#description'   => t('Please select a component on this webform to use as Text.'),
+    '#default_value' => $component['extra']['text_1_component'],
+    '#description'   => t('Please select a component on this webform to use as Text 1.'),
     '#required'      => FALSE,
-    '#parents' => array('extra', 'text_component'),
+    '#parents' => array('extra', 'text_1_component'),
+  );
+
+  $form['extra']['click2call_config']['text_2_component'] = array(
+    '#title'         => t('Text 2 Component'),
+    '#type'          => 'select',
+    '#options'       => $text_options,
+    '#default_value' => $component['extra']['text_2_component'],
+    '#description'   => t('Please select a component on this webform to use as Text 2.'),
+    '#required'      => FALSE,
+    '#parents' => array('extra', 'text_2_component'),
   );
 
   return $form;
@@ -145,6 +171,7 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
 
   $params = array(
     'script_name' => $component['extra']['script_name'],
+    'script_method' => $component['extra']['script_method'],
     'extra' => $component['extra'],
     'submission' => $submission,
   );
@@ -167,8 +194,13 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
     $element['#suffix'] = 'Call ID: ' . $value[0];
   }
   else {
-    $call_form = drupal_get_form('click2call_call_form', 'click2call_webform', $delta, $params);
-    $element['#suffix'] = drupal_render($call_form);
+    if ('post_submit' == $component['extra']['script_method']) {
+      $element['#title_display'] = 'none';
+    }
+    else {
+      $call_form = drupal_get_form('click2call_call_form', 'click2call_webform', $delta, $params);
+      $element['#suffix'] = drupal_render($call_form);
+    }
   }
 
   /*
@@ -266,17 +298,18 @@ function _webform_table_represent($component, $value) {
  * - _webform_attachments_component
  * - _webform_delete_component
  * - _webform_help_component
- * - _webform_submit_component
  */
- /*
+
+ /**
+  * Implements _webform_submit_component().
+  */
 function _webform_submit_click2call($component, $value) {
-  dsm('well hopefully here we finally are');
-  dpm('component');
-  dpm($component);
-  dsm('value');
-  dpm($value);
+//  dsm('well hopefully here we finally are');
+//  dpm('component');
+//  dpm($component);
+//  dsm('value');
+//  dpm($value);
 }
-*/
 
 /**
  * Implements _webform_display_component().

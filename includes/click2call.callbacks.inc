@@ -9,35 +9,6 @@ function click2call_call($c2c_form_build_id) {
     $delta = $form_build_info['args']['delta'];
     $c2c_key = $form_build_info['args']['c2c_key'];
 
-    /*
-    // TODO: Need a better way to set variables
-    switch ($field_name) {
-      case 'block':
-        //Blocks
-        $caller_uid = 1;
-        $name = variable_get('click2call_block_script_desc_' . $delta, t('Click here to call'));
-        $script_name = variable_get('click2call_block_script_' . $delta, 0);
-        $caller_name = t('Click2Call Block ' . $delta);
-        $phone_to = '+17783232112';
-        break;
-
-      case 'webform':
-        //Blocks
-        $name = t('Click here to call ');
-//      $script_name = 'click2call_2way_engagement_script';
-        $caller_name = 'Open Media Testing';
-        // TODO: Get Phone to
-        $webform_node = node_load($delta);
-        if (isset($_GET['phoneto']) && $_GET['phoneto']) {
-          $phone_to = '+' . $_GET['phoneto'];
-        }
-        else {
-          $phone_to = '+17783232112';
-        }
-        break;
-    }
-    */
-
     $name = variable_get('click2call_block_script_desc_' . $delta, t('Click here to call'));
     $caller_name = t('Click2Call Block ' . $delta);
     $caller_uid = 1;
@@ -50,12 +21,12 @@ function click2call_call($c2c_form_build_id) {
       'delta' => $delta,
       'uid' => $user->uid,
       'name' => $name,
-      'number' => $number,
+//      'number' => $number,
       'dest_name' => $user->name,
       'caller_uid' => $caller_uid,
 //      'script_name' => $script_name,
       'click2call_key' => $c2c_key,
-      'click2call_phoneto' => $phone_to,
+  //    'click2call_phoneto' => $phone_to,
       'caller_name' => $caller_name,
 //      'click2call_call_form_params' => $form_build_info['args']['params'],
     );
@@ -67,7 +38,7 @@ function click2call_call($c2c_form_build_id) {
     $script = VoipScript::loadScript($params['script_name'], $params);
 
     $call = new VoipCall();
-    $call->setDestNumber($params['click2call_number']);
+    $call->setDestNumber($params['number_1']);
     $call->setDestName($params['dest_name']);
     $call->setCallerName($params['caller_name']);
     $call->setScript($script);
@@ -78,7 +49,14 @@ function click2call_call($c2c_form_build_id) {
 
     // Log call with watchdog
     $type = 'click2call';
-    $message = t("New Click2Call message recorded by $user->name to phone $number. See voipcall cid " . $call->getCid());
+    $message = t(
+      'New Click2Call message recorded by !username to phone !number. See voip call cid !call_cid.',
+      array(
+        '!username' => $user->name,
+        '!number' => $params['number'],
+        '!call_cid' => $call->getCid(),
+      )
+    );
     watchdog($type, $message);
 
     return array('callCid' => $call->getCid());

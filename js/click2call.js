@@ -82,13 +82,7 @@
   		//Enable hangup button
   		$("#click2call-hangup-button-"+click2callKey).removeAttr("disabled");
       $("#click2call-hangup-button-"+click2callKey).show();
-//      var queryString = "phone=" + encodeURIComponent(phone)+"&field_name="+fieldName+"&delta="+delta;
-/*
-      var queryString = "phone=" + encodeURIComponent(phone);
-      if ($("#click2call-"+click2callKey+"-tonumber").val()) {
-        queryString = queryString + '&phoneto=' + $("#click2call-"+click2callKey+"-tonumber").val();
-      }
-*/
+
   		$.ajax({
   			type: "GET",
   			url: Drupal.settings.basePath + "click2call/call/" + formBuildId,

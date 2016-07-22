@@ -93,7 +93,8 @@ function click2call_theme($existing, $type, $theme, $path) {
 function click2call_voipscript_get_script_names() {
   $script_names = array(
     'click2call_2way_engagement_script',
-    // TODO: Add SMS return script
+    'click2call_2way_engagement_sms_script',
+    'click2call_sms_script',
   );
   return $script_names;
 }
@@ -107,13 +108,29 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
 
     case 'click2call_2way_engagement_script':
       $script = new VoipScript('click2call_2way_engagement_script');
-      $script->addSay($params['intro']);
+      $script->addSay($params['text_1']);
       $script->addBeep();
       $script->addSay(t("Connecting you now."));
-      $script->addDial($params['to_number'], 30, false, 3600, '+1' . $params['from_number']);
+      $script->addDial($params['number_2'], 30, false, 3600, '+1' . $params['number_1']);
       break;
 
-    // Add SMS Return script
+    case 'click2call_2way_engagement_sms_script':
+      $script = new VoipScript('click2call_2way_engagement_sms_script');
+      $script->addSay($params['text_1']);
+      $script->addBeep();
+      $script->addSay(t("Connecting you now."));
+      $script->addDial($params['number_2'], 30, false, 3600, '+1' . $params['number_1']);
+      // TODO: Add Caller ID
+      $script->addSendText(strip_tags($params['text_2']));//, $params['number_1']);
+      break;
+
+    case 'click2call_sms_script':
+      $script = new VoipScript('click2call_sms_script');
+      // TODO: Add Caller ID
+      $script->addSendText(strip_tags($params['text_1']), $params['number_1']);
+      //      function addSendText($text, $to='', $network='SMS', $caller_id=''){
+      break;
+
     default:
       break;
   }
@@ -200,7 +217,7 @@ function click2call_call_form($form, &$form_state, $module, $delta, $params) {
   $form_state['build_info']['args']['params'] = $params;
   // TODO: Get rid of these last 2, shouldn't need them
   $form_state['build_info']['args']['call_label '] = 'click2call_webform_link';
-  $form_state['build_info']['args']['to_number'] = 'click2call_phoneto';
+//  $form_state['build_info']['args']['to_number'] = 'click2call_phoneto';
 
   $call_label = 'click2call_webform_link';
 //   $output = '<a class="click2call-link">' . t($call_label) . '</a>';
@@ -231,16 +248,16 @@ function click2call_call_form($form, &$form_state, $module, $delta, $params) {
     '#markup' => '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>',
   );
 
-  $to_number = 'click2call_phoneto';
-  if ($to_number) {
-    // Hidden input to store the to number.
-    $to_number = str_replace('+', '', $to_number);
-//    $output .= '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>';
-    $form['c2c_tonumber'] = array(
-      '#type' => 'markup',
-      '#markup' => '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>',
-    );
-  }
+//  $to_number = 'click2call_phoneto';
+//  if ($to_number) {
+//    // Hidden input to store the to number.
+//    $to_number = str_replace('+', '', $to_number);
+////    $output .= '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>';
+//    $form['c2c_tonumber'] = array(
+//      '#type' => 'markup',
+//      '#markup' => '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>',
+//    );
+//  }
 
   // Theme function for phone number entry
 //  $output .= theme('click2call_phone_numbers', array('field_name' => $field_name, 'delta' => $delta));
@@ -266,43 +283,3 @@ function click2call_call_form($form, &$form_state, $module, $delta, $params) {
 
   return $form;
 }
-
-/*
- * This does it all
- */
- /*
- // TODO: This should likely be a theme function
-function click2call_content($field_name, $delta, $script_name, $call_label = 'Click here to call', $to_number = '') {
-  $c2c_key = $field_name . '-' . $delta;
-  $click2call_settings = array(
-    'fieldName' => $field_name,
-    'delta' => $delta,
-    'c2cKey' => $c2c_key,
-  );
-  drupal_add_js(array('click2call' => $click2call_settings), 'setting');
-  drupal_add_js(drupal_get_path('module', 'click2call') . '/js/click2call.js');
-  drupal_add_css(drupal_get_path('module', 'click2call') . '/css/click2call.css');
-
-  $output = '<a class="click2call-link">' . t($call_label) . '</a>';
-  $output .= '<div id="click2call-group-' . $c2c_key . '" class="click2call-hidden">';
-  // Hidden div to store the phone list
-  $output .= '<div id="click2call-' . $c2c_key . '-hidden" class="click2call-hidden"></div>';
-  // Hidden div to store the call status in case of error
-  $output .= '<div id="click2call-' . $c2c_key . '-status"></div>';
-  // Hidden input to store the call cid.
-  $output .= '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>';
-  if ($to_number) {
-    // Hidden input to store the to number.
-    $to_number = str_replace('+', '', $to_number);
-    $output .= '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>';
-  }
-  // Theme function for phone number entry
-  $output .= theme('click2call_phone_numbers', array('field_name' => $field_name, 'delta' => $delta));
-  //Call/Remove button
-  $output .= '<input class="click2call-button" id="click2call-button-' . $c2c_key . '" type="button" value="Call Me" />';
-  //Hangup button
-  $output .= '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $c2c_key . '" type="button" value="' . t('Hangup') . '" />';
-  $output .= '</div>';
-  return $output;
-}
-*/
