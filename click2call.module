@@ -121,14 +121,15 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
       $script->addSay(t("Connecting you now."));
       $script->addDial($params['number_2'], 30, false, 3600, '+1' . $params['number_1']);
       // TODO: Add Caller ID
-      $script->addSendText(strip_tags($params['text_2']));//, $params['number_1']);
+      // TODO: Need to limit length of text to 160, or less if Twilio is using test account
+      $script->addSendText(substr(strip_tags($params['text_2']), 0));
       break;
 
     case 'click2call_sms_script':
       $script = new VoipScript('click2call_sms_script');
       // TODO: Add Caller ID
-      $script->addSendText(strip_tags($params['text_1']), $params['number_1']);
-      //      function addSendText($text, $to='', $network='SMS', $caller_id=''){
+      // $script->addSendText(substr(strip_tags($params['text_1']), 0), $params['number_1']);
+      // function addSendText($text, $to='', $network='SMS', $caller_id=''){
       break;
 
     default:
@@ -157,38 +158,7 @@ function click2call_get_form_build_info($c2c_form_build_id) {
   }
 }
 
-/*
- * This helper function sticks the click2call_call_form build id in before rendering
- */
- /*
-function click2call_call_form_render($module, $delta, $script_name) {
-  $c2c_key = $module . '-' . $delta;
-
-  $call_form = drupal_get_form('click2call_call_form', $module, $delta, $script_name);
-
-  // Add form build_id
-  if (isset($call_form['#build_id'])) {
-
-    if (isset($call_form['#attached']['js'])) {
-      foreach ($call_form['#attached']['js'] as $i => $js_array) {
-        if (isset($js_array['type']) && 'setting' == $js_array['type']) {
-          if (isset($js_array['data']['click2call'])) {
-//            $call_form['#attached']['js'][$i]['data']['click2call']['formBuildId'] = $call_form['#build_id'];
-            break;
-          }
-        }
-      }
-    }
-  }
-  else {
-    // TODO: Set a watchdog, no #build_id set on form
-  }
-  return drupal_render($call_form);
-}
-*/
-
 function click2call_call_form($form, &$form_state, $module, $delta, $params) {
-
   $form_state['cache'] = TRUE;
 
   $c2c_key = $module . '-' . $delta;
@@ -220,14 +190,12 @@ function click2call_call_form($form, &$form_state, $module, $delta, $params) {
 //  $form_state['build_info']['args']['to_number'] = 'click2call_phoneto';
 
   $call_label = 'click2call_webform_link';
-//   $output = '<a class="click2call-link">' . t($call_label) . '</a>';
   $form['c2c_header'] = array(
     '#type' => 'markup',
     '#markup' => $call_label,
   );
 
   // Hidden div to store the phone list
-//  $output .= '<div id="click2call-' . $c2c_key . '-hidden" class="click2call-hidden"></div>';
   $form['c2c_hidden'] = array(
     '#type' => 'markup',
     '#markup' => '<div id="click2call-' . $c2c_key . '-hidden" class="click2call-hidden"></div>',
@@ -235,46 +203,30 @@ function click2call_call_form($form, &$form_state, $module, $delta, $params) {
   );
 
   // Hidden div to store the call status in case of error
-//  $output .= '<div id="click2call-' . $c2c_key . '-status"></div>';
   $form['c2c_status'] = array(
     '#type' => 'markup',
     '#markup' => '<div id="click2call-' . $c2c_key . '-status"></div>',
   );
 
   // Hidden input to store the call cid.
-//  $output .= '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>';
   $form['c2c_callcid'] = array(
     '#type' => 'markup',
     '#markup' => '<input type="hidden" value="" id="click2call-' . $c2c_key . '-callcid"/>',
   );
 
-//  $to_number = 'click2call_phoneto';
-//  if ($to_number) {
-//    // Hidden input to store the to number.
-//    $to_number = str_replace('+', '', $to_number);
-////    $output .= '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>';
-//    $form['c2c_tonumber'] = array(
-//      '#type' => 'markup',
-//      '#markup' => '<input type="hidden" value="' . $to_number .'" id="click2call-' . $c2c_key . '-tonumber"/>',
-//    );
-//  }
-
   // Theme function for phone number entry
-//  $output .= theme('click2call_phone_numbers', array('field_name' => $field_name, 'delta' => $delta));
   $form['c2c_phone_numbers'] = array(
     '#type' => 'markup',
     '#markup' => theme('click2call_phone_numbers', array('field_name' => $module, 'delta' => $delta)),
   );
 
   //Call/Remove button
-  //  $output .= '<input class="click2call-button" id="click2call-button-' . $c2c_key . '" type="button" value="Call Me" />';
   $form['c2c_call_button'] = array(
     '#type' => 'markup',
     '#markup' => '<input class="click2call-button" id="click2call-button-' . $c2c_key . '" type="button" value="Call Me" />',
   );
 
   //Hangup button
-  //$output .= '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $c2c_key . '" type="button" value="' . t('Hangup') . '" />';
   $form['c2c_hangup_button'] = array(
     '#type' => 'markup',
     '#markup' => '<input class="click2call-hangup-button" id="click2call-hangup-button-' . $c2c_key . '" type="button" value="' . t('Hangup') . '" />',

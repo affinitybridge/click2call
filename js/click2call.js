@@ -1,10 +1,6 @@
 (function ($) {
   Drupal.behaviors.click2call = {
     attach: function (context, settings) {
-//      $(".hangup-button").attr('disabled', 'disabled');
-//    	click2callAttachEvents();
-//      var module = settings.click2call.module;
-//      var delta = settings.click2call.delta;
       var click2callKey = settings.click2call.c2cKey;
       var formBuildId = settings.click2call.formBuildId;
 
@@ -13,11 +9,9 @@
       $(".click2call-"+click2callKey+"-phone").hide();
 
       // Display Phone Link
-///*
       $('.click2call-link').click(function () {
         click2callDisplay(click2callKey);
       });
-//      */
       // Call Button
       $('.click2call-button').click(function () {
         click2callCall(click2callKey, formBuildId);
@@ -45,7 +39,6 @@
     */
   }
 
-///*
   function click2callDisplay(click2callKey) {
     if($("#click2call-group-"+click2callKey).hasClass('on')){
       $("#click2call-group-"+click2callKey).hide();
@@ -57,7 +50,6 @@
     }
     $("#click2call-group-"+click2callKey).toggleClass('on');
   }
-//*/
 
   function click2callCall(click2callKey, formBuildId) {
   	//Disable the button
@@ -98,19 +90,19 @@
   	var call_cid = $("#click2call-"+click2callKey+"-callcid").val();
 
   	$.ajax({
-  			type: "GET",
-  			url: Drupal.settings.basePath +"?q=click2call/hangup/" + call_cid,
-  			dataType: 'json',
-  			success: function(data){
-  						if(data.status){
-  							$(".click2call-"+click2callKey+"-phone").html("Terminating call...");
-                $("#click2call-button-"+click2callKey).removeAttr("disabled");
-                $("#click2call-button-"+click2callKey).show();
-                $("#click2call-hangup-button-"+click2callKey).attr("disabled", "disabled");
-                $("#click2call-hangup-button-"+click2callKey).hide();
-                $(".click2call-"+click2callKey+"-phone").hide();
-  						}
-  					}
+      type: "GET",
+      url: Drupal.settings.basePath +"?q=click2call/hangup/" + call_cid,
+      dataType: 'json',
+      success: function(data){
+        if(data.status){
+          $(".click2call-"+click2callKey+"-phone").html("Terminating call...");
+          $("#click2call-button-"+click2callKey).removeAttr("disabled");
+          $("#click2call-button-"+click2callKey).show();
+          $("#click2call-hangup-button-"+click2callKey).attr("disabled", "disabled");
+          $("#click2call-hangup-button-"+click2callKey).hide();
+          $(".click2call-"+click2callKey+"-phone").hide();
+        }
+      }
   	});
   }
 
@@ -129,32 +121,32 @@
   		url: Drupal.settings.basePath +"?q=click2call/status/" + call_cid,
   		dataType: 'json',
   		success: function(data){
-  					if(data.status=="success"){
-  						//Call is sucess
-  						$(".click2call-"+click2callKey+"-phone").html($("#click2call-"+click2callKey+"-hidden").html());
-  						$("#click2call-"+click2callKey+"-hidden").html("");
-  						click2callAttachEvents();
-  						$("#click2call-"+click2callKey+"-status").html(data.message);
-  						$("#click2call-button-"+click2callKey).removeAttr("disabled");
-  						$("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
-  					}
-  					else if(data.status=="failed"){
-  						//Call is terminated (busy, not answered, error, unavailable, ...)
-  						$(".click2call-"+click2callKey+"-phone").html($("#click2call-"+click2callKey+"-hidden").html());
-  						$("#click2call-"+click2callKey+"-hidden").html("");
-  						click2callAttachEvents();
-  						$("#click2call-"+click2callKey+"-status").html(data.message);
-  						$("#click2call-button-"+click2callKey).removeAttr("disabled");
-  						$("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
-  					}
-  					else{
-  					//Call is not finished yet, check again after 2 sec.
-  						window.setTimeout(function() {
-  							click2callCheck(call_cid, click2callKey);
-  						}, 2000);
-  					}
-  				}
-  	});
+        if (data.status == "success") {
+          //Call is sucess
+          $(".click2call-"+click2callKey+"-phone").html($("#click2call-"+click2callKey+"-hidden").html());
+          $("#click2call-"+click2callKey+"-hidden").html("");
+          click2callAttachEvents();
+          $("#click2call-"+click2callKey+"-status").html(data.message);
+          $("#click2call-button-"+click2callKey).removeAttr("disabled");
+          $("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
+        }
+        else if(data.status == "failed"){
+          //Call is terminated (busy, not answered, error, unavailable, ...)
+          $(".click2call-"+click2callKey+"-phone").html($("#click2call-"+click2callKey+"-hidden").html());
+          $("#click2call-"+click2callKey+"-hidden").html("");
+          click2callAttachEvents();
+          $("#click2call-"+click2callKey+"-status").html(data.message);
+          $("#click2call-button-"+click2callKey).removeAttr("disabled");
+          $("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
+        }
+        else {
+          //Call is not finished yet, check again after 2 sec.
+          window.setTimeout(function() {
+            click2callCheck(call_cid, click2callKey);
+          }, 2000);
+        }
+      }
+    });
   }
 
 }(jQuery));
