@@ -24,19 +24,15 @@
   };
 
   function click2callAttachEvents() {
-  	//Automatically select radio when typing in textfield
-    /*
-  	$(".click2call-type").focus(function() {
-  		$(this).prev().attr("checked","checked");
-  	});
-    */
+    //Automatically select radio when typing in textfield
+    // $(".click2call-type").focus(function() {
+    // 	$(this).prev().attr("checked","checked");
+    // });
 
-  	//Automatically select radio when focusing on select list
-    /*
-  	$(".click2call-voipnumber").focus(function() {
-  		$(this).prev().attr("checked","checked");
-  	});
-    */
+    //Automatically select radio when focusing on select list
+    // $(".click2call-voipnumber").focus(function() {
+    // 	$(this).prev().attr("checked","checked");
+    // });
   }
 
   function click2callDisplay(click2callKey) {
@@ -59,11 +55,11 @@
   	$("#click2call-"+click2callKey+"-status").html("");
   	//Upload button
   	var phone=$("#click2call-group-"+click2callKey+" input:radio:checked").val();
-  	if(phone=="voipnumber"){
+    if (phone == "voipnumber") {
   		//Get the phone number from select list
   		phone=$("#click2call-"+click2callKey+"-select :selected").val();
   	}
-  	else if(phone=="type"){
+    else if (phone == "type") {
   		phone=$("#click2call-"+click2callKey+"-type-phone").val();
   	}
 
@@ -130,7 +126,7 @@
           $("#click2call-button-"+click2callKey).removeAttr("disabled");
           $("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
         }
-        else if(data.status == "failed"){
+        else if (data.status == "failed") {
           //Call is terminated (busy, not answered, error, unavailable, ...)
           $(".click2call-"+click2callKey+"-phone").html($("#click2call-"+click2callKey+"-hidden").html());
           $("#click2call-"+click2callKey+"-hidden").html("");

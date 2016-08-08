@@ -45,52 +45,34 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
             }
 
             // Set Phone Component 2
-            // TODO: This should handle a case where phone is coming from representatives,
-            //       OR it should handle a case where phone is coming from phone
-            // TODO: Leave phone component handling if possible
             if ($extra['phone_2_component']) {
               $phone_2_component_cid = $extra['phone_2_component'];
               if ($submission_data[$extra['phone_2_component']]) {
                 if ($node = node_load($nid)) {
                   $phone_2_component = $node->webform['components'][$extra['phone_2_component']];
-                  switch ($phone_2_component['type']) {
-                    case 'phone':
-                      // TODO: Get label from phone component type
-                      // TODO: This should actually be pretty easy, just returning the value
-                      break;
-                    case 'represent':
-                      if (isset($phone_2_component['extra']['options_source'])) {
-                        $representative = webform_represent_get_representatives(
-                          $phone_2_component['extra']['options_source'],
-                          $submission_data[$extra['phone_2_component']]
-                        );
-                        if ($representative) {
-                          $form['c2c_header']['#markup'] = str_replace(
-                            'click2call_webform_link',
-                            t(
-                              'Contact !contact_label',
-                              array('!contact_label' => webform_represent_format_resource($representative))
-                            ),
-                            $form['c2c_header']['#markup']
-                          );
-                        }
-                        else {
-                          $form['c2c_header']['#markup'] = str_replace(
-                            'click2call_webform_link',
-                            t('Your Representative could not be found.  Something has gone wrong.'),
-                            $form['c2c_header']['#markup']
-                          );
-                          // TODO: Set watchdog on this error case
-                        }
-                      }
-                      break;
-                    default:
-                      $form['c2c_header']['#markup'] = str_replace(
-                        'click2call_webform_link',
-                        '',
-                        $form['c2c_header']['#markup']
-                      );
-                      break;
+
+                  $labels = module_invoke_all(
+                    'click2call_webform_get_label',
+                    $phone_2_component,
+                    $submission_data[$extra['phone_2_component']]
+                  );
+                  if ($label = array_shift($labels)) {
+                    $form['c2c_header']['#markup'] = str_replace(
+                      'click2call_webform_link',
+                      t(
+                        'Contact !contact_label',
+                        array('!contact_label' => $label)
+                      ),
+                      $form['c2c_header']['#markup']
+                    );
+                  }
+                  else {
+                    $form['c2c_header']['#markup'] = str_replace(
+                      'click2call_webform_link',
+                      '',
+                      $form['c2c_header']['#markup']
+                    );
+                    // TODO: Set watchdog on this error case
                   }
                 }
               }
@@ -151,7 +133,7 @@ function click2call_tokens_alter(array &$replacements, array $context) {
             }
           }
           if ($callcid && isset($token_chunks[3])) {
-            $call_data = voipcall_get_log_by_cid($callcid);
+            $call_data = click2call_get_voipcall_log($callcid);
             if (isset($call_data) && isset($call_data[$token_chunks[3]])) {
               if (isset($token_chunks[4])) {
                 switch ($token_chunks[4]) {
@@ -230,7 +212,7 @@ function click2call_webform_webform_submission_presave($node, &$submission) {
                 $script = VoipScript::loadScript($params['script_name'], $params);
                 $call = new VoipCall(array());
                 $call->setDestNumber($params['number']);
-                $call->setDestName('Dave');
+                $call->setDestName('First Name');
     //            $call->setCallerName($params['caller_name']);
 //                $call->setScript($script);
   //              $call->save();
@@ -303,61 +285,54 @@ function click2call_webform_click2call_params_alter(&$params) {
               $node = node_load($submission->nid);
               module_load_include('inc', 'webform', 'includes/webform.submissions');
               $submission_array = webform_submission_render($node, $submission, NULL, 'html');
-              $component_info = $node->webform['components'];
 
-              // Set From number
-              if (isset($params['extra']['phone_1_component'])) {
-                $submitted_component = webform_util_get_submission_by_cid(
-                  $node,
-                  $params['extra']['phone_1_component'],
-                  $submission_array
-                );
-                if (isset($submitted_component)) {
-                  $params['click2call_number'] = click2call_webform_get_number(
-                    $submitted_component,
-                    $submission->data[$params['extra']['phone_1_component']]
+              $component_mapping = array(
+                'phone_1_component' => array(
+                  'type' => 'number',
+                  'mapping' => array('number', 'number_1'),
+                ),
+                'phone_2_component' => array(
+                  'type' => 'number',
+                  'mapping' => array('number_2'),
+                ),
+                'text_1_component' => array(
+                  'type' => 'text',
+                  'mapping' => array('text_1'),
+                ),
+                'text_2_component' => array(
+                  'type' => 'text',
+                  'mapping' => array('text_2'),
+                ),
+              );
+
+              foreach ($component_mapping as $component_property => $property_info) {
+                if (isset($params['extra'][$component_property])) {
+                  $submitted_component = webform_util_get_submission_by_cid(
+                    $node,
+                    $params['extra'][$component_property],
+                    $submission_array
                   );
-                  $params['number_1'] = $params['click2call_number'];
-                  $params['number'] = $params['click2call_number'];
-                }
-              }
-
-              // Set To Number
-              if (isset($params['extra']['phone_2_component'])) {
-                $submitted_component = webform_util_get_submission_by_cid(
-                  $node,
-                  $params['extra']['phone_2_component'],
-                  $submission_array
-                );
-                if (isset($submitted_component)) {
-                  $params['number_2'] = click2call_webform_get_number(
-                    $submitted_component,
-                    $submission->data[$params['extra']['phone_2_component']]
-                  );
-                }
-              }
-
-              // Set text 1
-              if (isset($params['extra']['text_1_component'])) {
-                $submitted_component = webform_util_get_submission_by_cid(
-                  $node,
-                  $params['extra']['text_1_component'],
-                  $submission_array
-                );
-                if (isset($submitted_component)) {
-                  $params['text_1'] = $submitted_component['#value'];
-                }
-              }
-
-              // Set text 2
-              if (isset($params['extra']['text_2_component'])) {
-                $submitted_component = webform_util_get_submission_by_cid(
-                  $node,
-                  $params['extra']['text_2_component'],
-                  $submission_array
-                );
-                if (isset($submitted_component)) {
-                  $params['text_2'] = $submitted_component['#value'];
+                  if (isset($submitted_component)) {
+                    switch ($property_info['type']) {
+                      case 'number':
+                        $numbers = module_invoke_all(
+                          'click2call_webform_get_number',
+                          $submitted_component,
+                          $submission->data[$params['extra'][$setting]]
+                        );
+                        if ($number = array_shift($numbers)) {
+                          foreach ($property_info['mapping'] as $param) {
+                            $params[$param] = $number;
+                          }
+                        }
+                        break;
+                      case 'text':
+                        foreach ($property_info['mapping'] as $param) {
+                          $params[$param] = $submitted_component['#value'];
+                        }
+                        break;
+                    }
+                  }
                 }
               }
             }
@@ -405,49 +380,32 @@ function click2call_webform_webform_component_info() {
 //-------------------------------------------------------
 
 /*
- *
+ * Implements hook_click2call_webform_get_number()
  */
-function click2call_webform_get_number($component, $value) {
+function click2call_webform_click2call_webform_get_number($component, $value) {
   switch ($component['#webform_component']['type']) {
     case 'phone':
-      return $component['#value'];
-      break;
-    case 'represent':
-      $representative = webform_represent_get_representatives(
-        $component['#webform_component']['extra']['options_source'],
-        $value
-      );
-      if (isset($representative)) {
-        if (isset($representative->offices[0]->tel)) {
-          return $representative->offices[0]->tel;
-        }
-      }
+      return array($component['#value']);
       break;
   }
 }
 
 /*
- *
+ * Implements hook_click2call_webform_get_label()
  */
-function webform_represent_get_representatives($represent_sets, $emails, $multiple = FALSE) {
-  $representatives = array();
-  foreach ($represent_sets as $represent_set) {
-    if ($represent_set) {
-      foreach ($emails as $email) {
-        if ($email) {
-          if ($represent_resource = webform_represent_resource_load($represent_set, $email)) {
-            if ($multiple) {
-              $representatives[] = $represent_resource;
-            }
-            else {
-              return $represent_resource;
-            }
-          }
-        }
-      }
-    }
+function click2call_webform_click2call_webform_get_label($component, $value) {
+  switch ($component['type']) {
+    case 'phone':
+      return $value;
+      break;
   }
-  return $representatives;
+}
+
+/*
+ * Implements hook_click2call_webform_get_number_types()
+ */
+function click2call_webform_click2call_webform_get_number_types() {
+  return array('phone');
 }
 
 /*
@@ -460,16 +418,4 @@ function webform_util_get_submission_by_cid($node, $cid, $submission_array) {
       return $submission_array[$component_array['form_key']];
     }
   }
-}
-
-/*
- *
- */
-function voipcall_get_log_by_cid($call_cid) {
-  // TODO: Use drupal static to save this, add a reset param
-  return db_select('voipcall', 'vc')
-    ->fields('vc')
-    ->condition('cid' , $call_cid)
-    ->execute()
-    ->fetchAssoc();
 }

@@ -66,12 +66,10 @@ function _webform_edit_click2call($component) {
   }
   $options = array('' => t('- Select -'));
   $phone_options = $options;
+  $phone_number_types = module_invoke_all('click2call_webform_get_number_types');
   foreach ($webform_components as $sibling_component) {
-    switch ($sibling_component['type']) {
-      case 'represent':
-      case 'phone':
-        $phone_options[$sibling_component['cid']] = $sibling_component['name'];
-        break;
+    if (in_array($sibling_component['type'], $phone_number_types)) {
+      $phone_options[$sibling_component['cid']] = $sibling_component['name'];
     }
   }
   $text_options = $options;
@@ -103,9 +101,9 @@ function _webform_edit_click2call($component) {
     '#title'         => t('Script Method'),
     '#type'          => 'radios',
     '#options'       => array(
-      'automatic' => t('Run the script automatically when the webform page holding this component is loaded.'),
-      'button' => t('Allow the user to run the script by clicking a button on the webform'),
-      'post_submit' => t('Do not render any widgets for this component and run the script on webform submit'),
+      'automatic'    => t('Run the script automatically when the webform page holding this component is loaded.'),
+      'button'       => t('Allow the user to run the script by clicking a button on the webform'),
+      'post_submit'  => t('Do not render any widgets for this component and run the script on webform submit'),
     ),
     '#default_value' => $component['extra']['script_method'],
     '#description'   => t('Please select how the script will be run.'),
@@ -231,87 +229,6 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
 }
 
 /**
- * Implements _webform_analysis_component().
- */
- /*
-function _webform_analysis_represent($component, $sids = array()) {
-  $query = db_select('webform_submitted_data', 'wsd', array('fetch' => PDO::FETCH_ASSOC))
-      ->fields('wsd', array('data'))
-      ->condition('nid', $component['nid'])
-      ->condition('cid', $component['cid']);
-
-  if (count($sids)) {
-    $query->condition('sid', $sids, 'IN');
-  }
-
-  $nonblanks = 0;
-  $submissions = 0;
-
-  // This could possibly be extended to count submissions by
-  // country using the postal_code_validation API.
-  $result = $query->execute();
-  foreach ($result as $data) {
-    if (drupal_strlen(trim($data['data'])) > 0) {
-      $nonblanks++;
-    }
-    $submissions++;
-  }
-
-  $rows[0] = array(t('Left Blank'), ($submissions - $nonblanks));
-  $rows[1] = array(t('User entered value'), $nonblanks);
-  return $rows;
-}*/
-
-/**
- * Implements _webform_csv_headers_component().
- */
- /*
-function _webform_csv_headers_represent($component, $export_options) {
-  $header = array();
-  $header[0] = '';
-  $header[1] = '';
-  $header[2][] = t('@name Email', array('@name' => $component['name']));
-  return $header;
-}
-*/
-
-/**
- * Implements _webform_csv_data_component().
- */
- /*
-function _webform_csv_data_represent($component, $export_options, $value) {
-  return _webform_represent_values_to_string($value);
-}
-*/
-
-/**
- * Implements _webform_table_component().
- */
-/*
-function _webform_table_represent($component, $value) {
-  return _webform_represent_values_to_string($value);
-}
-*/
-
-/*
- * We do not need to define:
- * - _webform_attachments_component
- * - _webform_delete_component
- * - _webform_help_component
- */
-
- /**
-  * Implements _webform_submit_component().
-  */
-function _webform_submit_click2call($component, $value) {
-//  dsm('well hopefully here we finally are');
-//  dpm('component');
-//  dpm($component);
-//  dsm('value');
-//  dpm($value);
-}
-
-/**
  * Implements _webform_display_component().
  */
 function _webform_display_click2call($component, $value, $format = 'html', $submission = array()) {
@@ -353,9 +270,8 @@ function _webform_csv_data_click2call($component, $export_options, $value) {
   return isset($value[0]) ? $value[0] : '';
 }
 
-
 /**
- * Creates string from array of Represent values.
+ * Transform value, which will be a cid, to call log output
  */
 function _webform_click2call_values_to_string($value) {
   return voipcall_call_page($value[0]);

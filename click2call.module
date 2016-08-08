@@ -235,3 +235,15 @@ function click2call_call_form($form, &$form_state, $module, $delta, $params) {
 
   return $form;
 }
+
+/*
+ *
+ */
+function click2call_get_voipcall_log($call_cid) {
+  // TODO: Use drupal static to save this, add a reset param
+  return db_select('voipcall', 'vc')
+    ->fields('vc')
+    ->condition('cid' , $call_cid)
+    ->execute()
+    ->fetchAssoc();
+}
