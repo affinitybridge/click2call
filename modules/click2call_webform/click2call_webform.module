@@ -318,7 +318,7 @@ function click2call_webform_click2call_params_alter(&$params) {
                         $numbers = module_invoke_all(
                           'click2call_webform_get_number',
                           $submitted_component,
-                          $submission->data[$params['extra'][$setting]]
+                          $submission->data[$params['extra'][$component_property]]
                         );
                         if ($number = array_shift($numbers)) {
                           foreach ($property_info['mapping'] as $param) {
