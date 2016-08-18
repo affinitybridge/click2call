@@ -219,13 +219,7 @@ function click2call_webform_webform_submission_presave($node, &$submission) {
                 // Dial the call.
 //                voip_dial($call);
                 // TODO: Set this all up, replace tokens and strip tags
-                $params['text_1'] = token_replace(
-                  $params['text_1'],
-                  array(
-                    'node' => $node,
-                    'submission' => $submission,
-                  )
-                );
+                $params['text_1'] = webform_replace_tokens($params['text_1'], $node, $submission);
                 voip_text($params['text_1'], $call);
 
                 // Log call with watchdog
