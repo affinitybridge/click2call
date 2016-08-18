@@ -158,6 +158,16 @@ function _webform_edit_click2call($component) {
  * Implements _webform_render_component().
  */
 function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $submission = NULL) {
+  // if (!isset($submission->data)) {
+  //   $trace = debug_backtrace();
+  //   foreach ($trace as & $step) {
+  //     unset($step['args']);
+  //     unset($step['object']);
+  //   }
+  //   var_dump('in function ' . __FUNCTION__);
+  //   var_dump($trace);
+  //   exit;
+  // }
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
 
   $default_value = $filter ? webform_replace_tokens($component['value'], $node) : $component['value'];
@@ -165,14 +175,14 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
     $default_value = $value[0];
   }
 
-  $delta = $component['nid'] . '-' . $component['cid'];
-
-  $params = array(
-    'script_name' => $component['extra']['script_name'],
-    'script_method' => $component['extra']['script_method'],
-    'extra' => $component['extra'],
-    'submission' => $submission,
-  );
+  // $delta = $component['nid'] . '-' . $component['cid'];
+  // 
+  // $params = array(
+  //   'script_name' => $component['extra']['script_name'],
+  //   'script_method' => $component['extra']['script_method'],
+  //   'extra' => $component['extra'],
+  //   'submission' => $submission,
+  // );
 
 //  $call_form_build_id = $call_form['#build_id'];
 //  $component['extra']['stash'] = $call_form_build_id;
@@ -188,6 +198,10 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
     '#translatable' => array('title', 'description'),
     '#default_value' => $default_value,
   );
+
+  // @see click2call_webform_alter_form_components()
+  $element['#render_call_form'] = FALSE;
+
   if (isset($value) && $value && isset($value[0]) && $value[0]) {
     $element['#suffix'] = 'Call ID: ' . $value[0];
   }
@@ -196,8 +210,11 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
       $element['#title_display'] = 'none';
     }
     else {
-      $call_form = drupal_get_form('click2call_call_form', 'click2call_webform', $delta, $params);
-      $element['#suffix'] = drupal_render($call_form);
+      // $call_form = drupal_get_form('click2call_call_form', 'click2call_webform', $delta, $params);
+      // $element['#suffix'] = drupal_render($call_form);
+
+      // @see click2call_webform_alter_form_components()
+      $element['#render_call_form'] = TRUE;
     }
   }
 

@@ -25,13 +25,24 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
         }
 
         if ($extra = $args['params']['extra']) {
-          if ($submission_data = $args['params']['submission']->data) {
+          if (! isset($args['params']['submission']->data)) {
+            $trace = debug_backtrace();
+            foreach ($trace as & $step) {
+              unset($step['args']);
+              unset($step['object']);
+            }
+            var_dump('in function ' . __FUNCTION__);
+            var_dump($trace);
+            var_dump($args, $form, $form_state);
+            exit;
+          }
+          if ($submitted = $args['params']['submitted']) {
 
             // Set Phone Component 1
             if ($extra['phone_1_component']) {
-              if ($submission_data[$extra['phone_1_component']]) {
-                $number = array_shift($submission_data[$extra['phone_1_component']]);
-                array_unshift($submission_data[$extra['phone_1_component']], $number);
+              $phone_1_component_cid = $extra['phone_1_component'];
+              if ($submitted[$phone_1_component_cid]) {
+                $number = is_array($submitted[$phone_1_component_cid]) ? reset($submitted[$phone_1_component_cid]) : $submitted[$phone_1_component_cid];
                 $form['c2c_call_button']['#markup'] = str_replace(
                   'Call Me',
                   t('Call Me at !number', array('!number' => $number)),
@@ -47,14 +58,14 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
             // Set Phone Component 2
             if ($extra['phone_2_component']) {
               $phone_2_component_cid = $extra['phone_2_component'];
-              if ($submission_data[$extra['phone_2_component']]) {
-                if ($node = node_load($nid)) {
-                  $phone_2_component = $node->webform['components'][$extra['phone_2_component']];
+              if ($submitted[$phone_2_component_cid]) {
+                if ($components = $args['params']['components']) {
+                  $phone_2_component = $components[$phone_2_component_cid];
 
                   $labels = module_invoke_all(
                     'click2call_webform_get_label',
                     $phone_2_component,
-                    $submission_data[$extra['phone_2_component']]
+                    array($submitted[$phone_2_component_cid])
                   );
                   if ($label = array_shift($labels)) {
                     $form['c2c_header']['#markup'] = str_replace(
@@ -88,16 +99,52 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
  * Implements hook_form_FORM_ID_alter().
  */
 function click2call_webform_form_webform_client_form_alter(&$form, &$form_state, $form_id) {
-  if (isset($form_state['webform'])) {
-    $page_num = $form_state['webform']['page_num'];
+  $click2call_components = [];
+  if (isset($form_state['webform']['component_tree']['children'])) {
     foreach ($form_state['webform']['component_tree']['children'] as $key => $component) {
-      if ('click2call' == $component['type'] && $page_num == $component['page_num']) {
-        switch ($component['extra']['script_method']) {
-          case 'automatic':
-            $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
-            break;
-        }
+      if ('click2call' == $component['type']) {
+        $click2call_components[] = $component;
       }
+    }
+  }
+  if ($click2call_components) {
+    // TODO: Pull this from an includes file
+    click2call_webform_alter_form_components($form, $form_state, $click2call_components);
+  }
+}
+
+/**
+ *
+ */
+function click2call_webform_alter_form_components(&$form, &$form_state, $click2call_components) {
+  // Load JS for "automatic" scripts.
+  $page_num = $form_state['webform']['page_num'];
+  foreach ($click2call_components as $component) {
+    if (($page_num == $component['page_num']) && ('automatic' == $component['extra']['script_method'])) {
+      $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
+      break;
+    }
+  }
+
+  // Load and attach call form.
+  foreach ($click2call_components as $component) {
+    $form_key = $component['form_key'];
+    if (isset($form['submitted'][$form_key]['#render_call_form']) && $form['submitted'][$form_key]['#render_call_form']) {
+      $delta = $component['nid'] . '-' . $component['cid'];
+      $params = [
+        'script_name' => $component['extra']['script_name'],
+        'script_method' => $component['extra']['script_method'],
+        'extra' => $component['extra'],
+        'submitted' => $form_state['values']['submitted'],
+        'node' => $form['#node'],
+        'components' => $form['#node']->webform['components'],
+      ];
+      var_dump('in click2call_webform_alter_form_components() $form:', $form);
+      var_dump('in click2call_webform_alter_form_components() $form_state:', $form_state);
+      var_dump('in click2call_webform_alter_form_components() $params:', $params);
+      exit;
+      $call_form = drupal_get_form('click2call_call_form', 'click2call_webform', $delta, $params);
+      $form['submitted'][$form_key]['#suffix'] = drupal_render($call_form);
     }
   }
 }
@@ -280,9 +327,9 @@ function click2call_webform_click2call_params_alter(&$params) {
           case 'click2call_2way_engagement_script':
           case 'click2call_2way_engagement_sms_script':
           case 'click2call_sms_script':
-            if (isset($params['submission'])) {
-              $submission = $params['submission'];
-              $node = node_load($submission->nid);
+            if (isset($params['submitted'])) {
+              $submitted = $params['submitted'];
+              $node = $params['node'];
               module_load_include('inc', 'webform', 'includes/webform.submissions');
               $submission_array = webform_submission_render($node, $submission, NULL, 'html');
 
@@ -307,7 +354,7 @@ function click2call_webform_click2call_params_alter(&$params) {
 
               foreach ($component_mapping as $component_property => $property_info) {
                 if (isset($params['extra'][$component_property])) {
-                  $submitted_component = webform_util_get_submission_by_cid(
+                  $submitted_component = click2call_webform_get_rendered_submission_by_cid(
                     $node,
                     $params['extra'][$component_property],
                     $submission_array
@@ -411,11 +458,11 @@ function click2call_webform_click2call_webform_get_number_types() {
 /*
  *
  */
-function webform_util_get_submission_by_cid($node, $cid, $submission_array) {
-  if (isset($node->webform['components'][$cid])) {
-    $component_array = $node->webform['components'][$cid];
-    if (isset($submission_array[$component_array['form_key']])) {
-      return $submission_array[$component_array['form_key']];
+function click2call_webform_get_rendered_submission_by_cid($node, $cid, $submission_array) {
+  if (isset($node->webform['components'][$cid]['form_key'])) {
+    $form_key = $node->webform['components'][$cid]['form_key'];
+    if (isset($submission_array[$form_key])) {
+      return $submission_array[$form_key];
     }
   }
 }
