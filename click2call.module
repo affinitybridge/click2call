@@ -152,6 +152,25 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
   return $script;
 }
 
+/**
+ * Implements hook_voip_event().
+ */
+function click2call_voip_event(&$call, $event_type) {
+  if (voip_debug()) {
+    $trace = debug_backtrace();
+    foreach ($trace as & $step) {
+      unset($step['args']);
+      unset($step['object']);
+    }
+    $wd_msg = [
+      '!trace' => var_export($trace, TRUE),
+      '!call' => var_export($call, TRUE),
+      '!event_type' => var_export($event_type, TRUE),
+    ];
+    watchdog('click2call_debug', 'in click2call_voip_event() <br /> trace: <br /> <pre>!trace</pre> <br /> call: <br /> <pre>!call</pre> event_type: <br /> <pre>!event_type</pre>', $wd_msg);
+  }
+}
+
 //-------------------------------------------------------
 // THEME FUNCTION - REFACTOR AND MOVE
 //-------------------------------------------------------
