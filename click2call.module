@@ -135,6 +135,20 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
     default:
       break;
   }
+
+  if (voip_debug()) {
+    $trace = debug_backtrace();
+    foreach ($trace as & $step) {
+      unset($step['args']);
+      unset($step['object']);
+    }
+    $wd_msg = [
+      '!trace' => var_export($trace, TRUE),
+      '!script' => var_export($script, TRUE),
+    ];
+    watchdog('click2call_debug', 'in click2call_voipscript_load_script() <br /> trace: <br /> <pre>!trace</pre> <br /> script: <br /> <pre>!script</pre>', $wd_msg);
+  }
+
   return $script;
 }
 
