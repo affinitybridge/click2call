@@ -157,17 +157,30 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
  */
 function click2call_voip_event(&$call, $event_type) {
   if (voip_debug()) {
+    $event_names = [
+      VoipEvent::INBOUND_CALL => 'INBOUND_CALL',
+      VoipEvent::OUTBOUND_CALL => 'OUTBOUND_CALL',
+      VoipEvent::HANGUP_BY_USER => 'HANGUP_BY_USER',
+      VoipEvent::NO_ANSWER => 'NO_ANSWER',
+      VoipEvent::BUSY => 'BUSY',
+      VoipEvent::INVALID => 'INVALID',
+      VoipEvent::INBOUND_SMS_RECEIVED => 'INBOUND_SMS_RECEIVED',
+      VoipEvent::OUTBOUND_SMS => 'OUTBOUND_SMS',
+      VoipEvent::CANCELED => 'CANCELED',
+      VoipEvent::SESSION_EXPIRED => 'SESSION_EXPIRED',
+    ];
+
     $trace = debug_backtrace();
     foreach ($trace as & $step) {
       unset($step['args']);
       unset($step['object']);
     }
     $wd_msg = [
+      '!event_type' => isset($event_names[$event_type]) ? $event_names[$event_type] : $event_type,
       '!trace' => var_export($trace, TRUE),
       '!call' => var_export($call, TRUE),
-      '!event_type' => var_export($event_type, TRUE),
     ];
-    watchdog('click2call_debug', 'in click2call_voip_event() <br /> trace: <br /> <pre>!trace</pre> <br /> call: <br /> <pre>!call</pre> event_type: <br /> <pre>!event_type</pre>', $wd_msg);
+    watchdog('click2call_debug', 'in click2call_voip_event(!event_type) <br /> trace: <br /> <pre>!trace</pre> <br /> call: <br /> <pre>!call</pre>', $wd_msg);
   }
 }
 
