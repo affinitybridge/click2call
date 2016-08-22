@@ -155,7 +155,7 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
 /**
  * Implements hook_voip_event().
  */
-function click2call_voip_event(&$call, $event_type) {
+function click2call_voip_event($call, $event_type) {
   if (voip_debug()) {
     $event_names = [
       VoipEvent::INBOUND_CALL => 'INBOUND_CALL',
