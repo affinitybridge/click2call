@@ -112,6 +112,7 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
       $script->addBeep();
       $script->addSay(t("Connecting you now."));
       $script->addDial($params['number_2'], 30, false, 3600, '+1' . $params['number_1']);
+      $script->addHangup('end_session');
       break;
 
     case 'click2call_2way_engagement_sms_script':
@@ -123,6 +124,7 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
       // TODO: Add Caller ID
       // TODO: Need to limit length of text to 160, or less if Twilio is using test account
       $script->addSendText(substr(strip_tags($params['text_2']), 0));
+      $script->addHangup('end_session');
       break;
 
     case 'click2call_sms_script':
