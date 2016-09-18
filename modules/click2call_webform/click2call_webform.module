@@ -60,7 +60,7 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
                     $form['c2c_header']['#markup'] = str_replace(
                       'click2call_webform_link',
                       t(
-                        'Contact !contact_label',
+                        'You are calling the office of !contact_label',
                         array('!contact_label' => $label)
                       ),
                       $form['c2c_header']['#markup']
