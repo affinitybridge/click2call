@@ -93,7 +93,10 @@ function click2call_webform_form_webform_client_form_alter(&$form, &$form_state,
       if ('click2call' == $component['type'] && $page_num == $component['page_num']) {
         switch ($component['extra']['script_method']) {
           case 'automatic':
-            $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
+            $c2c_element = $form['submitted'][$component['form_key']];
+            if (empty($c2c_element['#default_value'])) {
+              $form['#attached']['js'][] = drupal_get_path('module', 'click2call_webform') . '/js/click2call_webform.js';
+            }
             break;
         }
       }

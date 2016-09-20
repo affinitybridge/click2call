@@ -10,6 +10,7 @@
       $("input.webform-submit").hide();
       $("#click2call-"+click2callKey+"-status").change(function () {
         $("input.webform-submit").show();
+        $("#click2call-button-"+click2callKey).hide();
       });
     }
   };

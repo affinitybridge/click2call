@@ -97,6 +97,7 @@
           $("#click2call-hangup-button-"+click2callKey).attr("disabled", "disabled");
           $("#click2call-hangup-button-"+click2callKey).hide();
           $(".click2call-"+click2callKey+"-phone").hide();
+          $("#click2call-"+click2callKey+"-status").trigger("change");
         }
       }
   	});
@@ -123,10 +124,10 @@
           $("#click2call-"+click2callKey+"-hidden").html("");
           click2callAttachEvents();
           $("#click2call-"+click2callKey+"-status").html(data.message);
-          $("#click2call-"+click2callKey+"-status").trigger("change");
           $("#click2call-button-"+click2callKey).removeAttr("disabled");
           $("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
           $("#click2call-hangup-button-"+click2callKey).hide();
+          $("#click2call-"+click2callKey+"-status").trigger("change");
         }
         else if (data.status == "failed") {
 drupal_set_message('The Call failed!', 'warning');
@@ -137,6 +138,7 @@ drupal_set_message('The Call failed!', 'warning');
           $("#click2call-"+click2callKey+"-status").html(data.message);
           $("#click2call-button-"+click2callKey).removeAttr("disabled");
           $("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
+          $("#click2call-"+click2callKey+"-status").trigger("change");
         }
         else {
           //Call is not finished yet, check again after 2 sec.

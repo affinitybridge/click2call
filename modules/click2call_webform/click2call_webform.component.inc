@@ -190,7 +190,27 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
   );
 
   if (isset($value) && $value && isset($value[0]) && $value[0]) {
+    // Set default value but attempt to resolve with a formatted label
     $element['#suffix'] = 'Call ID: ' . $value[0];
+    if (!empty($component['extra']['phone_2_component'])) {
+      $phone_2_cid = $component['extra']['phone_2_component'];
+      if (!empty($submission->data[$phone_2_cid])) {
+        if ($node = node_load($submission->nid)) {
+          $phone_2_component = $node->webform['components'][$phone_2_cid];
+          $labels = module_invoke_all(
+            'click2call_webform_get_label',
+            $phone_2_component,
+            $submission->data[$phone_2_cid]
+          );
+          if ($label = array_shift($labels)) {
+            $element['#suffix'] = t(
+              'Called the office of !contact_label',
+              array('!contact_label' => $label)
+            );
+          }
+        }
+      }
+    }
   }
   else {
     if ('post_submit' == $component['extra']['script_method']) {
@@ -275,5 +295,23 @@ function _webform_csv_data_click2call($component, $export_options, $value) {
  * Transform value, which will be a cid, to call log output
  */
 function _webform_click2call_values_to_string($value) {
-  return voipcall_call_page($value[0]);
+  $call_data = db_select('voipcall', 'vc')
+    ->fields('vc')
+    ->condition('cid' , $value[0])
+    ->execute()
+    ->fetchAssoc();
+  $output = '';
+  foreach ($call_data as $label => $data) {
+    switch ($label) {
+      case 'script':
+        $output .= "<div><b>" . $label . ":</b> <blockquote>";
+        $output .= nl2br(print_r($data, true));
+        $output .= "</blockquote></div>";
+        break;
+      default:
+        $output .= "<div><b>" . $label . ":</b> " . $data . "</div>";
+        break;
+    }
+  }
+  return $output;
 }
