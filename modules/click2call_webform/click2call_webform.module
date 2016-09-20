@@ -14,7 +14,6 @@ function click2call_webform_form_click2call_call_form_alter(&$form, &$form_state
         // TODO: Add Phone number and maybe text
         $args = $form_state['build_info']['args'];
         list($nid, $webform_cid) = explode('-', $args['delta']);
-
         if (isset($args['params']['script_method'])) {
           switch ($args['params']['script_method']) {
             case 'post_submit':
@@ -411,5 +410,38 @@ function webform_util_get_submission_by_cid($node, $cid, $submission_array) {
     if (isset($submission_array[$component_array['form_key']])) {
       return $submission_array[$component_array['form_key']];
     }
+  }
+}
+
+/*
+ * Implements hook_click2call_call().
+ */
+function click2call_webform_click2call_call($call, $c2c_key) {
+  // Load webform, make a new submission
+  list($module, $delta) = explode('-', $c2c_key, 2);
+  switch ($module) {
+    case 'click2call_webform':
+      list($nid, $cid) = explode('-', $delta);
+      if (is_numeric($nid) && is_numeric($cid)) {
+        module_load_include('inc', 'webform', 'includes/webform.submissions');
+        if ($node = node_load($nid)) {
+          global $user;
+          if ($user->uid) {
+            $draft_sid = _webform_fetch_draft_sid($node->nid, $user->uid);
+          }
+          elseif (isset($_SESSION['webform_submission'])) {
+            // To use legacy key=value order as [sid]=nid.
+            $tmp_s = array_flip($_SESSION['webform_submission']);
+            // Make sure the draft is for the current form.
+            $draft_sid = (isset($tmp_s[$node->nid])) ? $tmp_s[$node->nid] : 0;
+          }
+          if ($draft_sid && $call_cid = $call->getCid()) {
+            $submission = webform_get_submission($nid, $draft_sid);
+            $submission->data[$cid][0] = $call_cid;
+            webform_submission_update($node, $submission);
+          }
+        }
+      }
+      break;
   }
 }

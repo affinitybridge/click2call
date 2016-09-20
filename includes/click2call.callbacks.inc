@@ -59,6 +59,9 @@ function click2call_call($c2c_form_build_id) {
     );
     watchdog($type, $message);
 
+    // Invoke a hook to allow child modules to do something with the call
+    module_invoke_all('click2call_call', $call, $c2c_key);
+
     return array('callCid' => $call->getCid());
   }
 }

@@ -87,7 +87,7 @@
 
   	$.ajax({
       type: "GET",
-      url: Drupal.settings.basePath +"?q=click2call/hangup/" + call_cid,
+      url: Drupal.settings.basePath +"?q=click2call/hangup/" + call_cid + "/click2callKey",
       dataType: 'json',
       success: function(data){
         if(data.status){
@@ -123,10 +123,13 @@
           $("#click2call-"+click2callKey+"-hidden").html("");
           click2callAttachEvents();
           $("#click2call-"+click2callKey+"-status").html(data.message);
+          $("#click2call-"+click2callKey+"-status").trigger("change");
           $("#click2call-button-"+click2callKey).removeAttr("disabled");
           $("#click2call-hangup-button-"+click2callKey).attr('disabled', 'disabled');
+          $("#click2call-hangup-button-"+click2callKey).hide();
         }
         else if (data.status == "failed") {
+drupal_set_message('The Call failed!', 'warning');
           //Call is terminated (busy, not answered, error, unavailable, ...)
           $(".click2call-"+click2callKey+"-phone").html($("#click2call-"+click2callKey+"-hidden").html());
           $("#click2call-"+click2callKey+"-hidden").html("");

@@ -7,6 +7,10 @@
         $(".webform-component-click2call input[name='submitted[click2call]']").val(callCid);
       });
       $("#click2call-button-"+click2callKey).click();
+      $("input.webform-submit").hide();
+      $("#click2call-"+click2callKey+"-status").change(function () {
+        $("input.webform-submit").show();
+      });
     }
   };
 

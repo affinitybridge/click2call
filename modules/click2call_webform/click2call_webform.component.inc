@@ -180,14 +180,15 @@ function _webform_render_click2call($component, $value = NULL, $filter = TRUE, $
     '#type' => 'hidden',
     //    '#title' => $filter ? NULL : $component['name'],
     '#title' => $filter ? _webform_filter_xss($component['name']) : $component['name'],
-    //    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
-    //    '#required' => $component['mandatory'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
+    //'#required' => $component['mandatory'],
     '#weight' => $component['weight'],
     '#theme_wrappers' => array('webform_element'),
     //    '#translatable' => array('title'),
     '#translatable' => array('title', 'description'),
     '#default_value' => $default_value,
   );
+
   if (isset($value) && $value && isset($value[0]) && $value[0]) {
     $element['#suffix'] = 'Call ID: ' . $value[0];
   }
