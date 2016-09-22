@@ -73,6 +73,7 @@ function click2call_call($c2c_form_build_id) {
 function click2call_hangup($call_cid) {
   $call = VoipCall::load($call_cid);
   $status = voip_hangup($call);
+  module_invoke_all('click2call_hangup', $call);
   return array('status' => $status);
 }
 
@@ -99,6 +100,8 @@ function click2call_status($call_cid) {
       return array('status' => 'failed', 'message' => $failed_message);
     }
     $message='<div class="messages status">' . $call->getCallStatusDescription() . '</div>';
+    // TODO: VoipCall is Completed, invoke a HOOKS
+    module_invoke_all('click2call_completed', $call);
     return array('status' => 'success' , 'message' => $message);
   }
   else {
