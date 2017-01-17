@@ -7,9 +7,11 @@
         $(".webform-component-click2call input[name='submitted[click2call]']").val(callCid);
       });
       $("#click2call-button-"+click2callKey).click();
-      $("input.webform-submit").hide();
+      $("input.webform-submit").attr('disabled', true);
+      $("input.webform-submit").addClass('form-button-disabled');
       $("#click2call-"+click2callKey+"-status").change(function () {
-        $("input.webform-submit").show();
+        $("input.webform-submit").removeAttr('disabled');
+        $("input.webform-submit").removeClass('form-button-disabled');
         $("#click2call-button-"+click2callKey).hide();
       });
     }
