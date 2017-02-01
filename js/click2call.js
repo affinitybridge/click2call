@@ -65,7 +65,7 @@
 
   	//Hide the phone number selection
   	$("#click2call-"+click2callKey+"-hidden").html($(".click2call-"+click2callKey+"-phone").html());
-      $(".click2call-"+click2callKey+"-phone").html("Calling...");
+      $(".click2call-"+click2callKey+"-phone").html(Drupal.t("Calling..."));
       $(".click2call-"+click2callKey+"-phone").show();
   		//Enable hangup button
   		$("#click2call-hangup-button-"+click2callKey).removeAttr("disabled");
@@ -91,7 +91,7 @@
       dataType: 'json',
       success: function(data){
         if(data.status){
-          $(".click2call-"+click2callKey+"-phone").html("Terminating call...");
+          $(".click2call-"+click2callKey+"-phone").html(Drupal.t("Terminating call..."));
           $("#click2call-button-"+click2callKey).removeAttr("disabled");
           $("#click2call-button-"+click2callKey).show();
           $("#click2call-hangup-button-"+click2callKey).attr("disabled", "disabled");
