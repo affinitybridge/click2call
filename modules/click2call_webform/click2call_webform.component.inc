@@ -14,6 +14,9 @@
 // Define component and its basic capabilities
 
 function _webform_defaults_click2call() {
+  // Get server object to retriev default voice.
+  $server = voiptwilio_voipserver_info();
+
   return array(
     'name' => '',
     'form_key' => NULL,
@@ -26,6 +29,7 @@ function _webform_defaults_click2call() {
       'description' => '',
       'private' => FALSE,
       'caller_number' => click2call_webform_get_caller_number_default(),
+      'voice_id' => $server->getDefaultVoice()->getVoiceId(),
       'phone_1_component' => '',
       'phone_2_component' => '',
       'script_method' => '',
@@ -95,6 +99,19 @@ function _webform_edit_click2call($component) {
     '#description'   => t('The number chosen here will be used to place the initial call to your supporter.'),
     '#required'      => TRUE,
     '#parents' => array('extra', 'caller_number'),
+  );
+
+  // Retrieve list of available voices from voipdrupal.
+  $server = voiptwilio_voipserver_info();
+  $voices = VoipVoice::getVoices(NULL, NULL, NULL, $server->getId());
+  $form['extra']['click2call_config']['voice_id'] = array(
+    '#title' => t('Default voice'),
+    '#type' => 'select',
+    '#options' =>  voipcall_get_voices_as_list($voices),
+    '#default_value' => $component['extra']['voice_id'],
+    '#description' => t('Voice to be used in automatic text-to-speech generation.'),
+    '#required'      => TRUE,
+    '#parents' => array('extra', 'voice_id'),
   );
 
   $form['extra']['click2call_config']['script_name'] = array(

@@ -108,21 +108,45 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
 
     case 'click2call_2way_engagement_script':
       $script = new VoipScript('click2call_2way_engagement_script');
-      $script->addSay($params['text_1']);
+      // If a voice has been set then use it.
+      if (array_key_exists('voice_id', $params)) {
+        $script->addSay(v($params['text_1'], array(), NULL, $params['voice_id']));
+      }
+      else {
+        $script->addSay($params['text_1']);
+      }
       $script->addBeep();
-      $script->addSay(t("Connecting you now."));
+      // If a voice has been set then use it.
+      if (array_key_exists('voice_id', $params)) {
+        $script->addSay(v(t("Connecting you now."), array(), NULL, $params['voice_id']));
+      }
+      else {
+        $script->addSay(t("Connecting you now."));
+      }
       $script->addDial($params['number_2'], 30, false, 3600, '+1' . $params['number_1']);
       break;
 
     case 'click2call_2way_engagement_sms_script':
       $script = new VoipScript('click2call_2way_engagement_sms_script', $params);
-      $script->addSay($params['text_1']);
+      // If a voice has been set then use it.
+      if (array_key_exists('voice_id', $params)) {
+        $script->addSay(v($params['text_1'], array(), NULL, $params['voice_id']));
+      }
+      else {
+        $script->addSay($params['text_1']);
+      }
       $script->addBeep();
-      $script->addSay(t("Connecting you now."));
+      // If a voice has been set then use it.
+      if (array_key_exists('voice_id', $params)) {
+        $script->addSay(v(t("Connecting you now."), array(), NULL, $params['voice_id']));
+      }
+      else {
+        $script->addSay(t("Connecting you now."));
+      }
       $script->addDial($params['number_2'], 30, false, 3600, '+1' . $params['number_1']);
       // TODO: Add Caller ID
       // TODO: Need to limit length of text to 160, or less if Twilio is using test account
-//      $script->addSendText(substr(strip_tags($params['text_2']), 0));
+      // $script->addSendText(substr(strip_tags($params['text_2']), 0));
       break;
 
     case 'click2call_sms_script':

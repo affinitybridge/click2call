@@ -275,6 +275,10 @@ function click2call_webform_click2call_params_alter(&$params) {
       if (isset($params['extra']['caller_number'])) {
         $params['caller_number'] = $params['extra']['caller_number'];
       }
+      // Add voice_id parameter if it has been set in the component.
+      if (isset($params['extra']['voice_id'])) {
+        $params['voice_id'] = $params['extra']['voice_id'];
+      }
       if (isset($params['script_name'])) {
         switch ($params['script_name']) {
           case 'click2call_2way_engagement_script':
