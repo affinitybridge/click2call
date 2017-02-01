@@ -40,7 +40,11 @@ function click2call_call($c2c_form_build_id) {
     $call = new VoipCall();
     $call->setDestNumber($params['number_1']);
     $call->setDestName($params['dest_name']);
+    // Set caller number if it exists.
     $call->setCallerName($params['caller_name']);
+    if (array_key_exists('caller_number', $params)) {
+      $call->setCallerNumber($params['caller_number']);
+    }
     $call->setScript($script);
     $call->save();
 

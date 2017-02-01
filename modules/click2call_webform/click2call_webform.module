@@ -266,11 +266,15 @@ function click2call_webform_token_info_alter(&$data) {
 }
 
 /*
- * Impolements hook_TYPE_alter().
+ * Implements hook_click2call_params_alter().
  */
 function click2call_webform_click2call_params_alter(&$params) {
   switch ($params['module']) {
     case 'click2call_webform':
+      // Add caller_number parameter if it has been set in the component.
+      if (isset($params['extra']['caller_number'])) {
+        $params['caller_number'] = $params['extra']['caller_number'];
+      }
       if (isset($params['script_name'])) {
         switch ($params['script_name']) {
           case 'click2call_2way_engagement_script':
@@ -447,4 +451,32 @@ function click2call_webform_click2call_call($call, $c2c_key) {
       }
       break;
   }
+}
+
+/*
+ * Implementation of hook_form_form_id_alter()
+ */
+function click2call_webform_form_click2call_admin_settings_form_alter (&$form, &$form_state, $form_id) {
+
+  $form['click2call_webform'] = array(
+      '#type'         => 'fieldset',
+      '#title'        => t('Webform settings'),
+      '#collapsible'  => TRUE,
+      '#collapsed'    => FALSE,
+      '#weight' => 20,
+    );
+
+  $form['click2call_webform']['click2call_webform_default_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default number to call from'),
+    '#default_value' => variable_get('click2call_webform_default_number', variable_get('voipcall_cid_number', '')),
+    '#description' => 'This number will be used as the default value when users choose a number to send their calls from when configuring webform click2call components.  It should be in the E.164 format (eg. +1234567890).  If a value is not set here, the default VOIP Drupal will be used.',
+  );
+
+    $form['click2call_webform']['click2call_webform_available_numbers'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Numbers available to call from'),
+    '#default_value' => variable_get('click2call_webform_available_numbers', variable_get('voipcall_cid_number', '')),
+    '#description' => 'Please enter as key|value pairs, with one par per line (eg. +1234567890|(123) 456-7890 (Ottawa)).  These will be presented to users as options when they are choosing a number to send their calls from when configuring webform click2call components.  Keys should be entered in the E.164 format as they are numbers that will be dialed whereas values will be used as labels.',
+  );
 }

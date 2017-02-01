@@ -25,6 +25,7 @@ function _webform_defaults_click2call() {
       'title_display' => 0,
       'description' => '',
       'private' => FALSE,
+      'caller_number' => click2call_webform_get_caller_number_default(),
       'phone_1_component' => '',
       'phone_2_component' => '',
       'script_method' => '',
@@ -35,7 +36,6 @@ function _webform_defaults_click2call() {
       'aslist' => 0,
       'multiple' => 1,
       'optrand' => 0,
-
       'other_option' => 0,
     ),
   );
@@ -85,6 +85,16 @@ function _webform_edit_click2call($component) {
     '#title'         => t('Click2Call Configuration'),
     '#type'          => 'fieldset',
 //    '#parents' => array('extra', 'click2call_config'),
+  );
+
+  $form['extra']['click2call_config']['caller_number'] = array(
+    '#title'         => t('Caller Number'),
+    '#type'          => 'select',
+    '#options'       => click2call_webform_get_caller_number_options(),
+    '#default_value' => $component['extra']['caller_number'],
+    '#description'   => t('The number chosen here will be used to place the initial call to your supporter.'),
+    '#required'      => TRUE,
+    '#parents' => array('extra', 'caller_number'),
   );
 
   $form['extra']['click2call_config']['script_name'] = array(
@@ -314,4 +324,47 @@ function _webform_click2call_values_to_string($value) {
     }
   }
   return $output;
+}
+
+/*
+ * Provides default value for component's caller number setting.
+ */
+function click2call_webform_get_caller_number_default() {
+  return variable_get('click2call_webform_default_number', variable_get('voipcall_cid_number', ''));
+}
+
+/*
+ * Provides available options for component's caller number setting.
+ */
+function click2call_webform_get_caller_number_options() {
+  $available_numbers = variable_get('click2call_webform_available_numbers', variable_get('voipcall_cid_number', ''));
+
+  static $option_cache = array();
+
+  // Keep each processed option block in an array indexed by the MD5 hash of
+  // the option text.
+  $md5 = md5($available_numbers);
+
+  // Check if this option block has been previously processed.
+  if (!isset($option_cache[$md5])) {
+    $options = array();
+    $rows = array_filter(explode("\n", trim($available_numbers)));
+    $group = NULL;
+    foreach ($rows as $option) {
+      $option = trim($option);
+      // Split on pipe if possible.
+      if (preg_match('/^([^|]+)\|(.*)$/', $option, $matches)) {
+        $key = $matches[1];
+        $value = $matches[2];
+        $options[$key] = $value;
+      }
+      else {
+        $options[$option] = $option;
+      }
+    }
+    // Add option to cache.
+    $option_cache[$md5] = $options;
+  }
+  // Return our options from the option_cache array.
+  return $option_cache[$md5];
 }
