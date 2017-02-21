@@ -116,36 +116,38 @@ function click2call_tokens_alter(array &$replacements, array $context) {
           continue;
         }
         $token_chunks = explode(':', $name);
-        if ('values' == $token_chunks[0] && 'call_log' == $token_chunks[2]) {
-          // Get component from webform by form_key
-          $click2call_cid = 0;
-          $callcid = 0;
-          if (isset($context['data']['node']->webform['components'])) {
-            foreach ($context['data']['node']->webform['components'] as $cid => $component) {
-              if ('click2call' == $component['type']) {
-                if (!strcmp($component['form_key'], $token_chunks[1])) {
-                  $click2call_cid = $cid;
+        if (array_key_exists(2, $token_chunks)) {
+          if ('values' == $token_chunks[0] && 'call_log' == $token_chunks[2]) {
+            // Get component from webform by form_key
+            $click2call_cid = 0;
+            $callcid = 0;
+            if (isset($context['data']['node']->webform['components'])) {
+              foreach ($context['data']['node']->webform['components'] as $cid => $component) {
+                if ('click2call' == $component['type']) {
+                  if (!strcmp($component['form_key'], $token_chunks[1])) {
+                    $click2call_cid = $cid;
+                  }
                 }
               }
             }
-          }
-          if ($click2call_cid) {
-            if (isset($context['data']['webform-submission']->data[$click2call_cid])) {
-              $callcid = current($context['data']['webform-submission']->data[$click2call_cid]);
-            }
-          }
-          if ($callcid && isset($token_chunks[3])) {
-            $call_data = click2call_get_voipcall_log($callcid);
-            if (isset($call_data) && isset($call_data[$token_chunks[3]])) {
-              if (isset($token_chunks[4])) {
-                switch ($token_chunks[4]) {
-                  case 'nolabel':
-                    $replacements[$original] = $call_data[$token_chunks[3]];
-                    break;
-                }
+            if ($click2call_cid) {
+              if (isset($context['data']['webform-submission']->data[$click2call_cid])) {
+                $callcid = current($context['data']['webform-submission']->data[$click2call_cid]);
               }
-              else {
-                $replacements[$original] = $token_chunks[3] . ': ' . $call_data[$token_chunks[3]];
+            }
+            if ($callcid && isset($token_chunks[3])) {
+              $call_data = click2call_get_voipcall_log($callcid);
+              if (isset($call_data) && isset($call_data[$token_chunks[3]])) {
+                if (isset($token_chunks[4])) {
+                  switch ($token_chunks[4]) {
+                    case 'nolabel':
+                      $replacements[$original] = $call_data[$token_chunks[3]];
+                      break;
+                  }
+                }
+                else {
+                  $replacements[$original] = $token_chunks[3] . ': ' . $call_data[$token_chunks[3]];
+                }
               }
             }
           }
