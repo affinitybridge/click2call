@@ -334,7 +334,7 @@ function click2call_webform_click2call_params_alter(&$params) {
                         break;
                       case 'text':
                         foreach ($property_info['mapping'] as $param) {
-                          $params[$param] = $submitted_component['#value'];
+                          $params[$param] = strip_tags($submitted_component['#value']);
                         }
                         break;
                     }
