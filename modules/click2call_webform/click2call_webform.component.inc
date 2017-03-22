@@ -323,22 +323,59 @@ function _webform_csv_data_click2call($component, $export_options, $value) {
  */
 function _webform_click2call_values_to_string($value) {
   $call_data = db_select('voipcall', 'vc')
+
     ->fields('vc')
     ->condition('cid' , $value[0])
     ->execute()
     ->fetchAssoc();
   $output = '';
-  foreach ($call_data as $label => $data) {
-    switch ($label) {
-      case 'script':
-        $output .= "<div><b>" . $label . ":</b> <blockquote>";
-        $output .= nl2br(print_r($data, true));
-        $output .= "</blockquote></div>";
-        break;
-      default:
-        $output .= "<div><b>" . $label . ":</b> " . $data . "</div>";
-        break;
+  if (is_array($call_data)) {
+    $output = '<div class="click2call-output">';
+    foreach ($call_data as $label => $data) {
+      switch ($label) {
+        case 'script':
+        case 'uid':
+        case 'caller_name':
+        case 'dest_name':
+        case 'max_session_duration':
+        case 'answered_by':
+        case 'direction':
+        case 'source':
+        case 'check_machine':
+        case 'call_channel':
+        case 'call_network':
+        case 'call_origin':
+        case 'text_status':
+        case 'created':
+        case 'changed':
+          break;
+        case 'cid':
+          $output .= "<div><strong>" . t('Internal ID') . "</strong>: " . $data . "</div>";
+          break;
+        case 'call_id':
+          $output .= "<div><strong>" . t('VOIP Provider ID') . "</strong>: " . $data . "</div>";
+          break;
+        case 'duration':
+          $output .= "<div><strong>" . t('Duration') . "</strong>: " . $data . " seconds</div>";
+          break;
+        case 'caller_number':
+        case 'dest_number':
+          $output .= "<div><strong>" . ucwords(str_replace('_', ' ', $label)) . "</strong>: " . ltrim(preg_replace('/\D/', '', $data), '1') . "</div>";
+          break;
+        case 'start_time':
+        case 'end_time':
+          $output .= "<div><strong>" . ucwords(str_replace('_', ' ', $label)) . "</strong>: " . date('F jS, Y \a\t g:ia (e)', $data) . "</div>";
+          break;
+        case 'error_message':
+          $data = empty($data) ? 'none' : $data;
+          $output .= "<div><strong>" . t('Error Message') . "</strong>: " . $data . "</div>";
+          break;
+        default:
+          $output .= "<div><strong>" . ucwords(str_replace('_', ' ', $label)) . "</strong>: " . $data . "</div>";
+          break;
+      }
     }
+    $output .= "</div>";
   }
   return $output;
 }
