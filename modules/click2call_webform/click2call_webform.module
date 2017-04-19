@@ -285,6 +285,7 @@ function click2call_webform_click2call_params_alter(&$params) {
         switch ($params['script_name']) {
           case 'click2call_2way_engagement_script':
           case 'click2call_2way_engagement_sms_script':
+          case 'click2call_multi_engagment_sms_script':
           case 'click2call_sms_script':
             if (isset($params['submission'])) {
               $submission = $params['submission'];
@@ -298,8 +299,7 @@ function click2call_webform_click2call_params_alter(&$params) {
                   'mapping' => array('number', 'number_1'),
                 ),
                 'phone_2_component' => array(
-                  'type' => 'number',
-                  'mapping' => array('number_2'),
+                  'type' => 'numbers',
                 ),
                 'text_1_component' => array(
                   'type' => 'text',
@@ -331,6 +331,22 @@ function click2call_webform_click2call_params_alter(&$params) {
                             $params[$param] = $number;
                           }
                         }
+                        break;
+                      case 'numbers':
+                        dd('case is numbers');
+                        $numbers = module_invoke_all(
+                          'click2call_webform_get_number',
+                          $submitted_component,
+                          $submission->data[$params['extra'][$component_property]]
+                        );
+                        dd($numbers);
+                        $i = 2;
+                        foreach ($numbers as $number) {
+                          $params['number_' . $i] = $number;
+                          $i++;
+                        }
+                        // Add target count to help scripts deal with multiple targets.
+                        $params['target_count'] = count($numbers);
                         break;
                       case 'text':
                         foreach ($property_info['mapping'] as $param) {
