@@ -172,10 +172,10 @@ function click2call_voipscript_load_script($script_name, $params = NULL) {
         //$script->addBeep();
         // If a voice has been set then use it.
         if (array_key_exists('voice_id', $params)) {
-          $script->addSay(v(t("Connecting you now with target " . $i . "."), array(), NULL, $params['voice_id']));
+          $script->addSay(v(t("Connecting you now with " . $params['label_' . $i+1] . "."), array(), NULL, $params['voice_id']));
         }
         else {
-          $script->addSay(t("Connecting you now with target " . $i . "."));
+          $script->addSay(t("Connecting you now with " . $params['label_' . $i+1] . "."));
         }
         $script->addDial($params['number_' . ($i+1)], 30, TRUE, 3600, '+1' . $params['number_1']);
         $script->addSay(t("Call over."));

@@ -339,11 +339,22 @@ function click2call_webform_click2call_params_alter(&$params) {
                           $submitted_component,
                           $submission->data[$params['extra'][$component_property]]
                         );
+                        $labels = module_invoke_all(
+                          'click2call_webform_get_label',
+                          $submitted_component,
+                          $submission->data[$params['extra'][$component_property]]
+                        );
                         dd($numbers);
+                        dd($labels);
                         $i = 2;
                         foreach ($numbers as $number) {
                           $params['number_' . $i] = $number;
                           $i++;
+                        }
+                        $j = 2;
+                        foreach ($labels as $label) {
+                          $params['label_' . $j] = $label;
+                          $j++;
                         }
                         // Add target count to help scripts deal with multiple targets.
                         $params['target_count'] = count($numbers);
