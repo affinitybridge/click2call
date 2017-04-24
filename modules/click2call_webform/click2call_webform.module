@@ -333,7 +333,6 @@ function click2call_webform_click2call_params_alter(&$params) {
                         }
                         break;
                       case 'numbers':
-                        dd('case is numbers');
                         $numbers = module_invoke_all(
                           'click2call_webform_get_number',
                           $submitted_component,
@@ -341,11 +340,9 @@ function click2call_webform_click2call_params_alter(&$params) {
                         );
                         $labels = module_invoke_all(
                           'click2call_webform_get_label',
-                          $submitted_component,
+                          $submitted_component['#webform_component'],
                           $submission->data[$params['extra'][$component_property]]
                         );
-                        dd($numbers);
-                        dd($labels);
                         $i = 2;
                         foreach ($numbers as $number) {
                           $params['number_' . $i] = $number;
