@@ -15,20 +15,21 @@ function click2call_call($c2c_form_build_id) {
 
     global $user;
     // TODO: Add back GET phone
-//    $number = $_GET['phone'];
+    // $number = $_GET['phone'];
     $params = $form_build_info['args']['params'] + array(
       'module' => $module,
       'delta' => $delta,
       'uid' => $user->uid,
       'name' => $name,
-//      'number' => $number,
+      // 'number' => $number,
       'dest_name' => $user->name,
       'caller_uid' => $caller_uid,
-//      'script_name' => $script_name,
+      // 'script_name' => $script_name,
       'click2call_key' => $c2c_key,
-  //    'click2call_phoneto' => $phone_to,
+      // 'click2call_phoneto' => $phone_to,
       'caller_name' => $caller_name,
-//      'click2call_call_form_params' => $form_build_info['args']['params'],
+      'country_code' => '1',
+      // 'click2call_call_form_params' => $form_build_info['args']['params'],
     );
     // Allow any modules to alter the params passed in, even script name
 

@@ -36,7 +36,7 @@ function _webform_defaults_click2call() {
       'script_name' => '',
       'text_1_component' => '',
       'text_2_component' => '',
-      // Quack like a select component.
+      'country_code' => '1',
       'aslist' => 0,
       'multiple' => 1,
       'optrand' => 0,
@@ -99,6 +99,15 @@ function _webform_edit_click2call($component) {
     '#description'   => t('The number chosen here will be used to place the initial call to your supporter.'),
     '#required'      => TRUE,
     '#parents' => array('extra', 'caller_number'),
+  );
+
+  $form['extra']['click2call_config']['country_code'] = array(
+    '#title'         => t('Country Code'),
+    '#type'          => 'textfield',
+    '#default_value' => $component['extra']['country_code'],
+    '#description'   => t('Do not include the E.164 format + sign (ie. 1 for Canada or the US). Leave this empty to pull country code from datasets directly.'),
+    '#required'      => TRUE,
+    '#parents' => array('extra', 'country_code'),
   );
 
   // Retrieve list of available voices from voipdrupal.

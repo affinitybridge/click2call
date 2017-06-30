@@ -175,7 +175,7 @@ function click2call_webform_webform_submission_presave($node, &$submission) {
                 $delta = $component['nid'] . '-' . $component['cid'];
                 $c2c_key = $module . '-' . $delta;
 
-    //            $name = variable_get('click2call_block_script_desc_' . $delta, t('Click here to call'));
+                // $name = variable_get('click2call_block_script_desc_' . $delta, t('Click here to call'));
                 $caller_name = t('Click2Call Block ' . $delta);
                 $caller_uid = 1;
                 global $user;
@@ -183,17 +183,18 @@ function click2call_webform_webform_submission_presave($node, &$submission) {
                   'module' => $module,
                   'delta' => $delta,
                   'uid' => $user->uid,
-    //              'name' => $name,
-            //      'number' => $number,
+                  // 'name' => $name,
+                  // 'number' => $number,
                   'dest_name' => $user->name,
                   'caller_uid' => $caller_uid,
-            //      'script_name' => $script_name,
+                  // 'script_name' => $script_name,
                   'click2call_key' => $c2c_key,
-              //    'click2call_phoneto' => $phone_to,
+                  // 'click2call_phoneto' => $phone_to,
                   'caller_name' => $caller_name,
-            //      'click2call_call_form_params' => $form_build_info['args']['params'],
+                  // 'click2call_call_form_params' => $form_build_info['args']['params'],
                   'script_name' => $component['extra']['script_name'],
                   'script_method' => $component['extra']['script_method'],
+
                 );
 
                 // TODO: Set params
@@ -217,11 +218,11 @@ function click2call_webform_webform_submission_presave($node, &$submission) {
                 $call = new VoipCall(array());
                 $call->setDestNumber($params['number']);
                 $call->setDestName('First Name');
-    //            $call->setCallerName($params['caller_name']);
-//                $call->setScript($script);
-  //              $call->save();
+                // $call->setCallerName($params['caller_name']);
+                // $call->setScript($script);
+                // $call->save();
                 // Dial the call.
-//                voip_dial($call);
+                // voip_dial($call);
                 // TODO: Set this all up, replace tokens and strip tags
                 $params['text_1'] = webform_replace_tokens($params['text_1'], $node, $submission);
                 voip_text($params['text_1'], $call);
@@ -281,6 +282,8 @@ function click2call_webform_click2call_params_alter(&$params) {
       if (isset($params['extra']['voice_id'])) {
         $params['voice_id'] = $params['extra']['voice_id'];
       }
+      // Add country_code parameter if it has been set in the component.
+      $params['country'] = isset($params['extra']['country_code']) ? $params['extra']['country_code'] : '';
       if (isset($params['script_name'])) {
         switch ($params['script_name']) {
           case 'click2call_2way_engagement_script':
