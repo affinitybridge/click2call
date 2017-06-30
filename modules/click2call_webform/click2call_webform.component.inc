@@ -106,7 +106,6 @@ function _webform_edit_click2call($component) {
     '#type'          => 'textfield',
     '#default_value' => $component['extra']['country_code'],
     '#description'   => t('Do not include the E.164 format + sign (ie. 1 for Canada or the US). Leave this empty to pull country code from datasets directly.'),
-    '#required'      => TRUE,
     '#parents' => array('extra', 'country_code'),
   );
 
